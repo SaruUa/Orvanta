@@ -16,5 +16,9 @@ class User(AbstractUser):
         default=UserRole.EMPLOYEE
     )
 
+    class Meta:
+        verbose_name = 'Користувач'
+        verbose_name_plural = 'Користувачі'
+
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
