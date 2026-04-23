@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Вхід до системи</title>
+</head>
+<body>
+    <h1>Вхід до системи</h1>
+
+    {% if form.errors %}
+        <p style="color: red;">Невірне ім'я користувача або пароль.</p>
+    {% endif %}
+
+    {% if next %}
+        {% if user.is_authenticated %}
+            <p>У вас немає доступу до цієї сторінки.</p>
+        {% else %}
+            <p>Будь ласка, увійдіть у систему.</p>
+        {% endif %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Увійти</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Головна сторінка</title>
+</head>
+<body>
+    <h1>Інформаційна система управління даними</h1>
+
+    <p>Вітаю, {{ request.user.username }}!</p>
+    <p>Роль: {{ request.user.get_role_display }}</p>
+
+    <h2>Загальна інформація</h2>
+    <ul>
+        <li>Клієнтів у системі: {{ clients_count }}</li>
+        <li>Послуг у системі: {{ services_count }}</li>
+        <li>Записів у системі: {{ appointments_count }}</li>
+        <li>Співробітників у системі: {{ employees_count }}</li>
+    </ul>
+
+    <p>
+        <a href="/admin/">Перейти до адміністративної панелі</a>
+    </p>
+
+    <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Вийти</button>
+    </form>
+</body>
+</html>
