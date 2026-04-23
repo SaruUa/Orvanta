@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Картка клієнта</title>
+</head>
+<body>
+    <h1>Картка клієнта</h1>
+
+    <p><a href="{% url 'client_list' %}">Назад до списку</a></p>
+    <p><a href="{% url 'client_update' client.pk %}">Редагувати клієнта</a></p>
+
+    <ul>
+        <li><strong>ПІБ:</strong> {{ client.full_name }}</li>
+        <li><strong>Телефон:</strong> {{ client.phone }}</li>
+        <li><strong>Email:</strong> {{ client.email|default:"—" }}</li>
+        <li><strong>Дата народження:</strong> {{ client.birth_date|default:"—" }}</li>
+        <li><strong>Примітки:</strong> {{ client.notes|default:"—" }}</li>
+        <li><strong>Активний:</strong> {{ client.is_active|yesno:"Так,Ні" }}</li>
+        <li><strong>Створено:</strong> {{ client.created_at }}</li>
+        <li><strong>Оновлено:</strong> {{ client.updated_at }}</li>
+    </ul>
+</body>
+</html>

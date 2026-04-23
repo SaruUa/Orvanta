@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Клієнти</title>
+</head>
+<body>
+    <h1>Список клієнтів</h1>
+
+    <p><a href="{% url 'home' %}">На головну</a></p>
+    <p><a href="{% url 'client_create' %}">Додати клієнта</a></p>
+
+    {% if clients %}
+        <table border="1" cellpadding="8" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>ПІБ</th>
+                    <th>Телефон</th>
+                    <th>Email</th>
+                    <th>Активний</th>
+                    <th>Дії</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in clients %}
+                    <tr>
+                        <td>{{ client.full_name }}</td>
+                        <td>{{ client.phone }}</td>
+                        <td>{{ client.email|default:"—" }}</td>
+                        <td>{{ client.is_active|yesno:"Так,Ні" }}</td>
+                        <td>
+                            <a href="{% url 'client_detail' client.pk %}">Перегляд</a>
+                            |
+                            <a href="{% url 'client_update' client.pk %}">Редагувати</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>У системі ще немає клієнтів.</p>
+    {% endif %}
+</body>
+</html>
