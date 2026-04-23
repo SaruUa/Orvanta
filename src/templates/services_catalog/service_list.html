@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Послуги</title>
+</head>
+<body>
+    <h1>Список послуг</h1>
+
+    <p><a href="{% url 'home' %}">На головну</a></p>
+    <p><a href="{% url 'service_create' %}">Додати послугу</a></p>
+    <p><a href="{% url 'category_list' %}">Перейти до категорій послуг</a></p>
+
+    {% if services %}
+        <table border="1" cellpadding="8" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Назва</th>
+                    <th>Категорія</th>
+                    <th>Ціна</th>
+                    <th>Тривалість (хв)</th>
+                    <th>Активна</th>
+                    <th>Дії</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for service in services %}
+                    <tr>
+                        <td>{{ service.name }}</td>
+                        <td>{{ service.category|default:"—" }}</td>
+                        <td>{{ service.price }}</td>
+                        <td>{{ service.duration_minutes }}</td>
+                        <td>{{ service.is_active|yesno:"Так,Ні" }}</td>
+                        <td>
+                            <a href="{% url 'service_detail' service.pk %}">Перегляд</a>
+                            |
+                            <a href="{% url 'service_update' service.pk %}">Редагувати</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>У системі ще немає послуг.</p>
+    {% endif %}
+</body>
+</html>

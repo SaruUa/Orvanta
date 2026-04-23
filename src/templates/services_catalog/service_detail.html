@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Деталі послуги</title>
+</head>
+<body>
+    <h1>Деталі послуги</h1>
+
+    <p><a href="{% url 'service_list' %}">Назад до списку послуг</a></p>
+    <p><a href="{% url 'service_update' service.pk %}">Редагувати послугу</a></p>
+
+    <ul>
+        <li><strong>Назва:</strong> {{ service.name }}</li>
+        <li><strong>Категорія:</strong> {{ service.category|default:"—" }}</li>
+        <li><strong>Опис:</strong> {{ service.description|default:"—" }}</li>
+        <li><strong>Ціна:</strong> {{ service.price }}</li>
+        <li><strong>Тривалість:</strong> {{ service.duration_minutes }} хв</li>
+        <li><strong>Активна:</strong> {{ service.is_active|yesno:"Так,Ні" }}</li>
+        <li><strong>Створено:</strong> {{ service.created_at }}</li>
+        <li><strong>Оновлено:</strong> {{ service.updated_at }}</li>
+    </ul>
+</body>
+</html>
