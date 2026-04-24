@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Деталі запису</title>
+</head>
+<body>
+    <h1>Деталі запису</h1>
+
+    <p><a href="{% url 'appointment_list' %}">Назад до списку записів</a></p>
+    <p><a href="{% url 'appointment_update' appointment.pk %}">Редагувати запис</a></p>
+
+    <ul>
+        <li><strong>Клієнт:</strong> {{ appointment.client }}</li>
+        <li><strong>Послуга:</strong> {{ appointment.service }}</li>
+        <li><strong>Співробітник:</strong> {{ appointment.employee }}</li>
+        <li><strong>Дата:</strong> {{ appointment.appointment_date }}</li>
+        <li><strong>Час початку:</strong> {{ appointment.start_time }}</li>
+        <li><strong>Час завершення:</strong> {{ appointment.end_time }}</li>
+        <li><strong>Статус:</strong> {{ appointment.get_status_display }}</li>
+        <li><strong>Коментар:</strong> {{ appointment.comment|default:"—" }}</li>
+        <li><strong>Створено:</strong> {{ appointment.created_at }}</li>
+        <li><strong>Оновлено:</strong> {{ appointment.updated_at }}</li>
+    </ul>
+</body>
+</html>

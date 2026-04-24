@@ -11,4 +11,5 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('clients/', include('clients.urls')),
     path('services/', include('services_catalog.urls')),
+    path('appointments/', include('appointments.urls')),
 ]

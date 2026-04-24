@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Записи</title>
+</head>
+<body>
+    <h1>Список записів</h1>
+
+    <p><a href="{% url 'home' %}">На головну</a></p>
+    <p><a href="{% url 'appointment_create' %}">Створити запис</a></p>
+
+    {% if appointments %}
+        <table border="1" cellpadding="8" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Клієнт</th>
+                    <th>Послуга</th>
+                    <th>Співробітник</th>
+                    <th>Дата</th>
+                    <th>Початок</th>
+                    <th>Кінець</th>
+                    <th>Статус</th>
+                    <th>Дії</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appointment in appointments %}
+                    <tr>
+                        <td>{{ appointment.client }}</td>
+                        <td>{{ appointment.service }}</td>
+                        <td>{{ appointment.employee }}</td>
+                        <td>{{ appointment.appointment_date }}</td>
+                        <td>{{ appointment.start_time }}</td>
+                        <td>{{ appointment.end_time }}</td>
+                        <td>{{ appointment.get_status_display }}</td>
+                        <td>
+                            <a href="{% url 'appointment_detail' appointment.pk %}">Перегляд</a>
+                            |
+                            <a href="{% url 'appointment_update' appointment.pk %}">Редагувати</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>У системі ще немає записів.</p>
+    {% endif %}
+</body>
+</html>
