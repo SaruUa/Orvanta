@@ -1,17 +1,27 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>Записи</title>
-</head>
-<body>
-    <h1>Список записів</h1>
+{% extends 'base.html' %}
 
-    <p><a href="{% url 'home' %}">На головну</a></p>
-    <p><a href="{% url 'appointment_create' %}">Створити запис</a></p>
+{% block title %}Записи{% endblock %}
 
-    {% if appointments %}
-        <table border="1" cellpadding="8" cellspacing="0">
+{% block content %}
+<h1 class="mb-4">Список записів</h1>
+
+<div class="mb-3">
+    <a href="{% url 'appointment_create' %}" class="btn btn-primary">Створити запис</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Фільтрація</h5>
+        <form method="get">
+            {{ filter_form.as_p }}
+            <button type="submit" class="btn btn-outline-primary">Застосувати фільтр</button>
+        </form>
+    </div>
+</div>
+
+{% if appointments %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
             <thead>
                 <tr>
                     <th>Клієнт</th>
@@ -35,16 +45,15 @@
                         <td>{{ appointment.end_time }}</td>
                         <td>{{ appointment.get_status_display }}</td>
                         <td>
-                            <a href="{% url 'appointment_detail' appointment.pk %}">Перегляд</a>
-                            |
-                            <a href="{% url 'appointment_update' appointment.pk %}">Редагувати</a>
+                            <a href="{% url 'appointment_detail' appointment.pk %}" class="btn btn-sm btn-outline-secondary">Перегляд</a>
+                            <a href="{% url 'appointment_update' appointment.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
                         </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <p>У системі ще немає записів.</p>
-    {% endif %}
-</body>
-</html>
+    </div>
+{% else %}
+    <p>Записів за вибраними критеріями не знайдено.</p>
+{% endif %}
+{% endblock %}

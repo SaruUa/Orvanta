@@ -1,26 +1,53 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>Деталі запису</title>
-</head>
-<body>
-    <h1>Деталі запису</h1>
+{% extends 'base.html' %}
 
-    <p><a href="{% url 'appointment_list' %}">Назад до списку записів</a></p>
-    <p><a href="{% url 'appointment_update' appointment.pk %}">Редагувати запис</a></p>
+{% block title %}Деталі запису{% endblock %}
 
-    <ul>
-        <li><strong>Клієнт:</strong> {{ appointment.client }}</li>
-        <li><strong>Послуга:</strong> {{ appointment.service }}</li>
-        <li><strong>Співробітник:</strong> {{ appointment.employee }}</li>
-        <li><strong>Дата:</strong> {{ appointment.appointment_date }}</li>
-        <li><strong>Час початку:</strong> {{ appointment.start_time }}</li>
-        <li><strong>Час завершення:</strong> {{ appointment.end_time }}</li>
-        <li><strong>Статус:</strong> {{ appointment.get_status_display }}</li>
-        <li><strong>Коментар:</strong> {{ appointment.comment|default:"—" }}</li>
-        <li><strong>Створено:</strong> {{ appointment.created_at }}</li>
-        <li><strong>Оновлено:</strong> {{ appointment.updated_at }}</li>
-    </ul>
-</body>
-</html>
+{% block content %}
+<h1 class="mb-4">Деталі запису</h1>
+
+<div class="mb-3">
+    <a href="{% url 'appointment_update' appointment.pk %}" class="btn btn-primary">Редагувати запис</a>
+</div>
+
+<ul class="list-group mb-4">
+    <li class="list-group-item"><strong>Клієнт:</strong> {{ appointment.client }}</li>
+    <li class="list-group-item"><strong>Послуга:</strong> {{ appointment.service }}</li>
+    <li class="list-group-item"><strong>Співробітник:</strong> {{ appointment.employee }}</li>
+    <li class="list-group-item"><strong>Дата:</strong> {{ appointment.appointment_date }}</li>
+    <li class="list-group-item"><strong>Час початку:</strong> {{ appointment.start_time }}</li>
+    <li class="list-group-item"><strong>Час завершення:</strong> {{ appointment.end_time }}</li>
+    <li class="list-group-item"><strong>Статус:</strong> {{ appointment.get_status_display }}</li>
+    <li class="list-group-item"><strong>Коментар:</strong> {{ appointment.comment|default:"—" }}</li>
+</ul>
+
+<h2 class="mb-3">Історія зміни статусів</h2>
+
+{% if status_history %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Старий статус</th>
+                    <th>Новий статус</th>
+                    <th>Ким змінено</th>
+                    <th>Дата і час</th>
+                    <th>Коментар</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in status_history %}
+                    <tr>
+                        <td>{{ item.get_old_status_display }}</td>
+                        <td>{{ item.get_new_status_display }}</td>
+                        <td>{{ item.changed_by|default:"—" }}</td>
+                        <td>{{ item.changed_at }}</td>
+                        <td>{{ item.comment|default:"—" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>Історія статусів відсутня.</p>
+{% endif %}
+{% endblock %}

@@ -1,6 +1,8 @@
 from django import forms
 
-from .models import Appointment
+from users.models import User, UserRole
+
+from .models import Appointment, AppointmentStatus
 
 
 class AppointmentForm(forms.ModelForm):
@@ -23,6 +25,13 @@ class AppointmentForm(forms.ModelForm):
             'comment': forms.Textarea(attrs={'rows': 4}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['employee'].queryset = User.objects.filter(
+            role=UserRole.EMPLOYEE,
+            is_active=True,
+        ).order_by('username')
+
     def clean(self):
         cleaned_data = super().clean()
         start_time = cleaned_data.get('start_time')
@@ -34,3 +43,22 @@ class AppointmentForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+
+class AppointmentFilterForm(forms.Form):
+    appointment_date = forms.DateField(
+        required=False,
+        label='Дата',
+        widget=forms.DateInput(attrs={'type': 'date'}),
+    )
+    status = forms.ChoiceField(
+        required=False,
+        label='Статус',
+        choices=[('', 'Усі статуси')] + list(AppointmentStatus.choices),
+    )
+    employee = forms.ModelChoiceField(
+        required=False,
+        label='Співробітник',
+        queryset=User.objects.filter(role=UserRole.EMPLOYEE, is_active=True).order_by('username'),
+        empty_label='Усі співробітники',
+    )

@@ -1,43 +1,47 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>Головна сторінка</title>
-</head>
-<body>
-    <h1>Інформаційна система управління даними</h1>
+{% extends 'base.html' %}
 
-    <p>Вітаю, {{ request.user.username }}!</p>
-    <p>Роль: {{ request.user.get_role_display }}</p>
+{% block title %}Головна{% endblock %}
 
-    <h2>Загальна інформація</h2>
-    <ul>
-        <li>Клієнтів у системі: {{ clients_count }}</li>
-        <li>Послуг у системі: {{ services_count }}</li>
-        <li>Записів у системі: {{ appointments_count }}</li>
-        <li>Співробітників у системі: {{ employees_count }}</li>
-    </ul>
+{% block content %}
+<h1 class="mb-4">Інформаційна система управління даними</h1>
 
-    <p>
+<div class="mb-4">
+    <p><strong>Користувач:</strong> {{ request.user.username }}</p>
+    <p><strong>Роль:</strong> {{ request.user.get_role_display }}</p>
+</div>
 
-    <a href="{% url 'client_list' %}">Перейти до списку клієнтів</a>
-
-    </p>
-    <p>
-
-    <a href="{% url 'service_list' %}">Перейти до списку послуг</a>
-
-    </p>
-    <p>
-    <a href="{% url 'appointment_list' %}">Перейти до списку записів</a>
-    </p>
-    <p>
-        <a href="/admin/">Перейти до адміністративної панелі</a>
-    </p>
-
-    <form action="{% url 'logout' %}" method="post">
-        {% csrf_token %}
-        <button type="submit">Вийти</button>
-    </form>
-</body>
-</html>
+<div class="row g-3">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5>Клієнти</h5>
+                <p class="display-6">{{ clients_count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5>Послуги</h5>
+                <p class="display-6">{{ services_count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5>Записи</h5>
+                <p class="display-6">{{ appointments_count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5>Співробітники</h5>
+                <p class="display-6">{{ employees_count }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

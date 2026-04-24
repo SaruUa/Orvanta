@@ -1,5 +1,8 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+
+from users.decorators import manager_or_admin_required
 
 from .forms import ClientForm
 from .models import Client
@@ -11,7 +14,7 @@ def client_list_view(request):
     return render(request, 'clients/client_list.html', {'clients': clients})
 
 
-@login_required
+@manager_or_admin_required
 def client_create_view(request):
     if request.method == 'POST':
         form = ClientForm(request.POST)
@@ -19,6 +22,7 @@ def client_create_view(request):
             client = form.save(commit=False)
             client.created_by = request.user
             client.save()
+            messages.success(request, 'Клієнта успішно створено.')
             return redirect('client_list')
     else:
         form = ClientForm()
@@ -29,7 +33,7 @@ def client_create_view(request):
     })
 
 
-@login_required
+@manager_or_admin_required
 def client_update_view(request, pk):
     client = get_object_or_404(Client, pk=pk)
 
@@ -37,6 +41,7 @@ def client_update_view(request, pk):
         form = ClientForm(request.POST, instance=client)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Дані клієнта успішно оновлено.')
             return redirect('client_list')
     else:
         form = ClientForm(instance=client)

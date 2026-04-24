@@ -1,25 +1,51 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import AppointmentForm
-from .models import Appointment
+from users.decorators import employee_manager_admin_required, manager_or_admin_required
+
+from .forms import AppointmentFilterForm, AppointmentForm
+from .models import Appointment, AppointmentStatusHistory
 
 
-@login_required
+@employee_manager_admin_required
 def appointment_list_view(request):
     appointments = Appointment.objects.select_related(
         'client',
         'service',
         'employee',
     ).all()
+
+    if request.user.role == 'employee':
+        appointments = appointments.filter(employee=request.user)
+
+    filter_form = AppointmentFilterForm(request.GET or None)
+
+    if filter_form.is_valid():
+        appointment_date = filter_form.cleaned_data.get('appointment_date')
+        status = filter_form.cleaned_data.get('status')
+        employee = filter_form.cleaned_data.get('employee')
+
+        if appointment_date:
+            appointments = appointments.filter(appointment_date=appointment_date)
+
+        if status:
+            appointments = appointments.filter(status=status)
+
+        if employee:
+            appointments = appointments.filter(employee=employee)
+
     return render(
         request,
         'appointments/appointment_list.html',
-        {'appointments': appointments},
+        {
+            'appointments': appointments,
+            'filter_form': filter_form,
+        },
     )
 
 
-@login_required
+@manager_or_admin_required
 def appointment_create_view(request):
     if request.method == 'POST':
         form = AppointmentForm(request.POST)
@@ -27,6 +53,16 @@ def appointment_create_view(request):
             appointment = form.save(commit=False)
             appointment.created_by = request.user
             appointment.save()
+
+            AppointmentStatusHistory.objects.create(
+                appointment=appointment,
+                old_status=appointment.status,
+                new_status=appointment.status,
+                changed_by=request.user,
+                comment='Початковий статус запису.',
+            )
+
+            messages.success(request, 'Запис успішно створено.')
             return redirect('appointment_list')
     else:
         form = AppointmentForm()
@@ -41,14 +77,26 @@ def appointment_create_view(request):
     )
 
 
-@login_required
+@manager_or_admin_required
 def appointment_update_view(request, pk):
     appointment = get_object_or_404(Appointment, pk=pk)
+    old_status = appointment.status
 
     if request.method == 'POST':
         form = AppointmentForm(request.POST, instance=appointment)
         if form.is_valid():
-            form.save()
+            updated_appointment = form.save()
+
+            if old_status != updated_appointment.status:
+                AppointmentStatusHistory.objects.create(
+                    appointment=updated_appointment,
+                    old_status=old_status,
+                    new_status=updated_appointment.status,
+                    changed_by=request.user,
+                    comment='Статус змінено через форму редагування запису.',
+                )
+
+            messages.success(request, 'Запис успішно оновлено.')
             return redirect('appointment_list')
     else:
         form = AppointmentForm(instance=appointment)
@@ -63,14 +111,24 @@ def appointment_update_view(request, pk):
     )
 
 
-@login_required
+@employee_manager_admin_required
 def appointment_detail_view(request, pk):
     appointment = get_object_or_404(
         Appointment.objects.select_related('client', 'service', 'employee'),
         pk=pk,
     )
+
+    if request.user.role == 'employee' and appointment.employee != request.user:
+        messages.error(request, 'У вас немає прав доступу до цього запису.')
+        return redirect('appointment_list')
+
+    status_history = appointment.status_history.select_related('changed_by').all()
+
     return render(
         request,
         'appointments/appointment_detail.html',
-        {'appointment': appointment},
+        {
+            'appointment': appointment,
+            'status_history': status_history,
+        },
     )
