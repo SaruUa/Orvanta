@@ -1,17 +1,27 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>Клієнти</title>
-</head>
-<body>
-    <h1>Список клієнтів</h1>
+{% extends 'base.html' %}
 
-    <p><a href="{% url 'home' %}">На головну</a></p>
-    <p><a href="{% url 'client_create' %}">Додати клієнта</a></p>
+{% block title %}Клієнти{% endblock %}
 
-    {% if clients %}
-        <table border="1" cellpadding="8" cellspacing="0">
+{% block content %}
+<h1 class="mb-4">Список клієнтів</h1>
+
+<div class="mb-3">
+    <a href="{% url 'client_create' %}" class="btn btn-primary">Додати клієнта</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Пошук і фільтрація</h5>
+        <form method="get">
+            {{ filter_form.as_p }}
+            <button type="submit" class="btn btn-outline-primary">Застосувати</button>
+        </form>
+    </div>
+</div>
+
+{% if clients %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
             <thead>
                 <tr>
                     <th>ПІБ</th>
@@ -26,19 +36,18 @@
                     <tr>
                         <td>{{ client.full_name }}</td>
                         <td>{{ client.phone }}</td>
-                        <td>{{ client.email|default:"—" }}</td>
-                        <td>{{ client.is_active|yesno:"Так,Ні" }}</td>
+                        <td>{{ client.email|default:'—' }}</td>
+                        <td>{{ client.is_active|yesno:'Так,Ні' }}</td>
                         <td>
-                            <a href="{% url 'client_detail' client.pk %}">Перегляд</a>
-                            |
-                            <a href="{% url 'client_update' client.pk %}">Редагувати</a>
+                            <a href="{% url 'client_detail' client.pk %}" class="btn btn-sm btn-outline-secondary">Перегляд</a>
+                            <a href="{% url 'client_update' client.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
                         </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <p>У системі ще немає клієнтів.</p>
-    {% endif %}
-</body>
-</html>
+    </div>
+{% else %}
+    <p>Клієнтів за вказаними критеріями не знайдено.</p>
+{% endif %}
+{% endblock %}

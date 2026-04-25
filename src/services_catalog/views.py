@@ -1,10 +1,11 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from users.decorators import manager_or_admin_required
 
-from .forms import ServiceCategoryForm, ServiceForm
+from .forms import ServiceCategoryForm, ServiceFilterForm, ServiceForm
 from .models import Service, ServiceCategory
 
 
@@ -53,7 +54,36 @@ def category_update_view(request, pk):
 @login_required
 def service_list_view(request):
     services = Service.objects.select_related('category').all()
-    return render(request, 'services_catalog/service_list.html', {'services': services})
+
+    filter_form = ServiceFilterForm(request.GET or None)
+
+    if filter_form.is_valid():
+        query = filter_form.cleaned_data.get('query')
+        category = filter_form.cleaned_data.get('category')
+        is_active = filter_form.cleaned_data.get('is_active')
+
+        if query:
+            services = services.filter(
+                Q(name__icontains=query) |
+                Q(description__icontains=query)
+            )
+
+        if category:
+            services = services.filter(category=category)
+
+        if is_active == 'true':
+            services = services.filter(is_active=True)
+        elif is_active == 'false':
+            services = services.filter(is_active=False)
+
+    return render(
+        request,
+        'services_catalog/service_list.html',
+        {
+            'services': services,
+            'filter_form': filter_form,
+        },
+    )
 
 
 @manager_or_admin_required

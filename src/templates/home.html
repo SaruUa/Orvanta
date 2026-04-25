@@ -10,25 +10,27 @@
     <p><strong>Роль:</strong> {{ request.user.get_role_display }}</p>
 </div>
 
-<div class="row g-3">
+<div class="row g-3 mb-4">
     <div class="col-md-3">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <h5>Клієнти</h5>
-                <p class="display-6">{{ clients_count }}</p>
+                <p class="display-6 mb-1">{{ clients_count }}</p>
+                <small class="text-muted">Активні: {{ active_clients_count }}</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <h5>Послуги</h5>
-                <p class="display-6">{{ services_count }}</p>
+                <p class="display-6 mb-1">{{ services_count }}</p>
+                <small class="text-muted">Активні: {{ active_services_count }}</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <h5>Записи</h5>
                 <p class="display-6">{{ appointments_count }}</p>
@@ -36,10 +38,83 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <h5>Співробітники</h5>
                 <p class="display-6">{{ employees_count }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="card-title mb-3">Статистика за статусами</h4>
+
+                {% if status_counts %}
+                    <ul class="list-group">
+                        {% for item in status_counts %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ item.status }}</span>
+                                <span class="badge bg-primary rounded-pill">{{ item.total }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="mb-0">Статистика поки відсутня.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="card-title mb-3">Найближчі записи</h4>
+
+                {% if nearest_appointments %}
+                    <ul class="list-group">
+                        {% for appointment in nearest_appointments %}
+                            <li class="list-group-item">
+                                <div><strong>{{ appointment.client }}</strong></div>
+                                <div>{{ appointment.service }}</div>
+                                <div class="text-muted">
+                                    {{ appointment.appointment_date }} | {{ appointment.start_time }}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="mb-0">Найближчі записи відсутні.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="card-title mb-3">Останні зміни статусів</h4>
+
+                {% if recent_status_changes %}
+                    <ul class="list-group">
+                        {% for item in recent_status_changes %}
+                            <li class="list-group-item">
+                                <div><strong>Запис #{{ item.appointment.id }}</strong></div>
+                                <div>
+                                    {{ item.get_old_status_display }} → {{ item.get_new_status_display }}
+                                </div>
+                                <div class="text-muted">
+                                    {{ item.changed_at }}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="mb-0">Зміни статусів поки відсутні.</p>
+                {% endif %}
             </div>
         </div>
     </div>
