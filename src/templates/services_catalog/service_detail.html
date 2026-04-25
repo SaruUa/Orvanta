@@ -1,24 +1,23 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>Деталі послуги</title>
-</head>
-<body>
-    <h1>Деталі послуги</h1>
+{% extends 'base.html' %}
 
-    <p><a href="{% url 'service_list' %}">Назад до списку послуг</a></p>
-    <p><a href="{% url 'service_update' service.pk %}">Редагувати послугу</a></p>
+{% block title %}Деталі послуги{% endblock %}
 
-    <ul>
-        <li><strong>Назва:</strong> {{ service.name }}</li>
-        <li><strong>Категорія:</strong> {{ service.category|default:"—" }}</li>
-        <li><strong>Опис:</strong> {{ service.description|default:"—" }}</li>
-        <li><strong>Ціна:</strong> {{ service.price }}</li>
-        <li><strong>Тривалість:</strong> {{ service.duration_minutes }} хв</li>
-        <li><strong>Активна:</strong> {{ service.is_active|yesno:"Так,Ні" }}</li>
-        <li><strong>Створено:</strong> {{ service.created_at }}</li>
-        <li><strong>Оновлено:</strong> {{ service.updated_at }}</li>
-    </ul>
-</body>
-</html>
+{% block content %}
+<h1 class="mb-4">Деталі послуги</h1>
+
+<div class="mb-3 d-flex gap-2">
+    <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">Назад до списку послуг</a>
+    <a href="{% url 'service_update' service.pk %}" class="btn btn-primary">Редагувати послугу</a>
+</div>
+
+<ul class="list-group">
+    <li class="list-group-item"><strong>Назва:</strong> {{ service.name }}</li>
+    <li class="list-group-item"><strong>Категорія:</strong> {{ service.category|default:'—' }}</li>
+    <li class="list-group-item"><strong>Опис:</strong> {{ service.description|default:'—' }}</li>
+    <li class="list-group-item"><strong>Ціна:</strong> {{ service.price }}</li>
+    <li class="list-group-item"><strong>Тривалість:</strong> {{ service.duration_minutes }} хв</li>
+    <li class="list-group-item"><strong>Активна:</strong> {{ service.is_active|yesno:'Так,Ні' }}</li>
+    <li class="list-group-item"><strong>Створено:</strong> {{ service.created_at }}</li>
+    <li class="list-group-item"><strong>Оновлено:</strong> {{ service.updated_at }}</li>
+</ul>
+{% endblock %}

@@ -1,18 +1,21 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ title }}</title>
-</head>
-<body>
-    <h1>{{ title }}</h1>
+{% extends 'base.html' %}
 
-    <p><a href="{% url 'service_list' %}">Назад до списку послуг</a></p>
+{% block title %}{{ title }}{% endblock %}
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Зберегти</button>
-    </form>
-</body>
-</html>
+{% block content %}
+<h1 class="mb-4">{{ title }}</h1>
+
+<div class="mb-3">
+    <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">Назад до списку послуг</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success">Зберегти</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

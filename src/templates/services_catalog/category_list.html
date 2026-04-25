@@ -1,18 +1,18 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <title>Категорії послуг</title>
-</head>
-<body>
-    <h1>Категорії послуг</h1>
+{% extends 'base.html' %}
 
-    <p><a href="{% url 'home' %}">На головну</a></p>
-    <p><a href="{% url 'category_create' %}">Додати категорію</a></p>
-    <p><a href="{% url 'service_list' %}">Перейти до списку послуг</a></p>
+{% block title %}Категорії послуг{% endblock %}
 
-    {% if categories %}
-        <table border="1" cellpadding="8" cellspacing="0">
+{% block content %}
+<h1 class="mb-4">Категорії послуг</h1>
+
+<div class="mb-3 d-flex gap-2">
+    <a href="{% url 'category_create' %}" class="btn btn-primary">Додати категорію</a>
+    <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">До списку послуг</a>
+</div>
+
+{% if categories %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
             <thead>
                 <tr>
                     <th>Назва</th>
@@ -24,16 +24,16 @@
                 {% for category in categories %}
                     <tr>
                         <td>{{ category.name }}</td>
-                        <td>{{ category.description|default:"—" }}</td>
+                        <td>{{ category.description|default:'—' }}</td>
                         <td>
-                            <a href="{% url 'category_update' category.pk %}">Редагувати</a>
+                            <a href="{% url 'category_update' category.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
                         </td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <p>Категорії ще не створено.</p>
-    {% endif %}
-</body>
-</html>
+    </div>
+{% else %}
+    <p>Категорії ще не створено.</p>
+{% endif %}
+{% endblock %}
