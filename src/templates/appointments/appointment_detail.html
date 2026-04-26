@@ -16,7 +16,12 @@
     <li class="list-group-item"><strong>Дата:</strong> {{ appointment.appointment_date }}</li>
     <li class="list-group-item"><strong>Час початку:</strong> {{ appointment.start_time }}</li>
     <li class="list-group-item"><strong>Час завершення:</strong> {{ appointment.end_time }}</li>
-    <li class="list-group-item"><strong>Статус:</strong> {{ appointment.get_status_display }}</li>
+    <li class="list-group-item">
+        <strong>Статус:</strong>
+        <span class="status-badge status-{{ appointment.status }}">
+          {{ appointment.get_status_display }}
+        </span>
+    </li>
     <li class="list-group-item"><strong>Коментар:</strong> {{ appointment.comment|default:"—" }}</li>
 </ul>
 

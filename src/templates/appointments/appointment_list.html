@@ -43,7 +43,11 @@
                         <td>{{ appointment.appointment_date }}</td>
                         <td>{{ appointment.start_time }}</td>
                         <td>{{ appointment.end_time }}</td>
-                        <td>{{ appointment.get_status_display }}</td>
+                        <td>
+                            <span class="status-badge status-{{ appointment.status }}">
+                                {{ appointment.get_status_display }}
+                            </span>
+                        </td>
                         <td>
                             <a href="{% url 'appointment_detail' appointment.pk %}" class="btn btn-sm btn-outline-secondary">Перегляд</a>
                             <a href="{% url 'appointment_update' appointment.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
