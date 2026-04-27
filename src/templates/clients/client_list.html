@@ -50,9 +50,18 @@
                         <td>{{ client.phone }}</td>
                         <td>{{ client.email|default:'—' }}</td>
                         <td>{{ client.is_active|yesno:'Так,Ні' }}</td>
-                        <td>
+                        <td class="d-flex gap-2 flex-wrap">
                             <a href="{% url 'client_detail' client.pk %}" class="btn btn-sm btn-outline-secondary">Перегляд</a>
                             <a href="{% url 'client_update' client.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
+
+                            <form method="post" action="{% url 'client_toggle_active' client.pk %}" class="m-0">
+                                {% csrf_token %}
+                                {% if client.is_active %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Деактивувати</button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Активувати</button>
+                                {% endif %}
+                            </form>
                         </td>
                     </tr>
                 {% endfor %}

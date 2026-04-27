@@ -4,7 +4,7 @@ from .views import (
     client_create_view,
     client_detail_view,
     client_list_view,
-    client_update_view,
+    client_update_view, client_toggle_active_view,
 )
 
 urlpatterns = [
@@ -12,4 +12,5 @@ urlpatterns = [
     path('create/', client_create_view, name='client_create'),
     path('<int:pk>/', client_detail_view, name='client_detail'),
     path('<int:pk>/edit/', client_update_view, name='client_update'),
+    path('<int:pk>/toggle-active/', client_toggle_active_view, name='client_toggle_active'),
 ]

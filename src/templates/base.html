@@ -21,9 +21,8 @@
             {% if request.user.role == 'admin' %}
                 <a class="nav-link" href="{% url 'admin_dashboard' %}">Адмін-панель</a>
                 <a class="nav-link" href="{% url 'audit_log_list' %}">Журнал аудиту</a>
+                <a class="nav-link" href="/admin/">Django Admin</a>
             {% endif %}
-
-            <a class="nav-link" href="/admin/">Admin</a>
         </div>
 
         <div class="d-flex align-items-center gap-3 text-white">

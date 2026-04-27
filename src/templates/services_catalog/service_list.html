@@ -58,9 +58,18 @@
                         <td>{{ service.price }}</td>
                         <td>{{ service.duration_minutes }}</td>
                         <td>{{ service.is_active|yesno:'Так,Ні' }}</td>
-                        <td>
+                        <td class="d-flex gap-2 flex-wrap">
                             <a href="{% url 'service_detail' service.pk %}" class="btn btn-sm btn-outline-secondary">Перегляд</a>
                             <a href="{% url 'service_update' service.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
+
+                            <form method="post" action="{% url 'service_toggle_active' service.pk %}" class="m-0">
+                                {% csrf_token %}
+                                {% if service.is_active %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Деактивувати</button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Активувати</button>
+                                {% endif %}
+                            </form>
                         </td>
                     </tr>
                 {% endfor %}

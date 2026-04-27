@@ -8,6 +8,7 @@ from .views import (
     service_detail_view,
     service_list_view,
     service_update_view,
+    service_toggle_active_view,
 )
 
 urlpatterns = [
@@ -18,4 +19,5 @@ urlpatterns = [
     path('create/', service_create_view, name='service_create'),
     path('<int:pk>/', service_detail_view, name='service_detail'),
     path('<int:pk>/edit/', service_update_view, name='service_update'),
+    path('<int:pk>/toggle-active/', service_toggle_active_view, name='service_toggle_active'),
 ]

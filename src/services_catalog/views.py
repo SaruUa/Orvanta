@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from users.decorators import manager_or_admin_required
 
@@ -126,3 +127,18 @@ def service_update_view(request, pk):
 def service_detail_view(request, pk):
     service = get_object_or_404(Service.objects.select_related('category'), pk=pk)
     return render(request, 'services_catalog/service_detail.html', {'service': service})
+
+
+@manager_or_admin_required
+@require_POST
+def service_toggle_active_view(request, pk):
+    service = get_object_or_404(Service, pk=pk)
+    service.is_active = not service.is_active
+    service.save(update_fields=['is_active', 'updated_at'])
+
+    if service.is_active:
+        messages.success(request, 'Послугу успішно активовано.')
+    else:
+        messages.success(request, 'Послугу успішно деактивовано.')
+
+    return redirect('service_list')

@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from users.decorators import manager_or_admin_required
 
@@ -83,3 +84,18 @@ def client_update_view(request, pk):
 def client_detail_view(request, pk):
     client = get_object_or_404(Client, pk=pk)
     return render(request, 'clients/client_detail.html', {'client': client})
+
+
+@manager_or_admin_required
+@require_POST
+def client_toggle_active_view(request, pk):
+    client = get_object_or_404(Client, pk=pk)
+    client.is_active = not client.is_active
+    client.save(update_fields=['is_active', 'updated_at'])
+
+    if client.is_active:
+        messages.success(request, 'Клієнта успішно активовано.')
+    else:
+        messages.success(request, 'Клієнта успішно деактивовано.')
+
+    return redirect('client_list')
