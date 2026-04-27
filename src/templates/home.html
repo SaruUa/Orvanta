@@ -33,7 +33,8 @@
         <div class="card stats-card h-100">
             <div class="card-body">
                 <h5>Записи</h5>
-                <p class="display-6">{{ appointments_count }}</p>
+                <p class="display-6 mb-1">{{ appointments_count }}</p>
+                <small class="text-muted">Виконані: {{ completed_count }}</small>
             </div>
         </div>
     </div>
@@ -41,7 +42,8 @@
         <div class="card stats-card h-100">
             <div class="card-body">
                 <h5>Співробітники</h5>
-                <p class="display-6">{{ employees_count }}</p>
+                <p class="display-6 mb-1">{{ employees_count }}</p>
+                <small class="text-muted">Скасовані записи: {{ cancelled_count }}</small>
             </div>
         </div>
     </div>
@@ -114,6 +116,50 @@
                     </ul>
                 {% else %}
                     <p class="mb-0">Зміни статусів поки відсутні.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="card-title mb-3">Популярні послуги</h4>
+
+                {% if popular_services %}
+                    <ul class="list-group">
+                        {% for item in popular_services %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ item.service__name }}</span>
+                                <span class="badge bg-success rounded-pill">{{ item.total }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="mb-0">Дані поки відсутні.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h4 class="card-title mb-3">Завантаженість співробітників</h4>
+
+                {% if employee_workload %}
+                    <ul class="list-group">
+                        {% for item in employee_workload %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{ item.employee__username }}</span>
+                                <span class="badge bg-dark rounded-pill">{{ item.total }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="mb-0">Дані поки відсутні.</p>
                 {% endif %}
             </div>
         </div>

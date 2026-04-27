@@ -7,14 +7,23 @@ body {
 }
 
 .page-title {
+    font-size: 3rem;
     font-weight: 700;
+    line-height: 1.1;
     margin-bottom: 1.5rem;
+    margin-left: 0;
 }
 
 .stats-card {
     border: none;
     border-radius: 1rem;
     box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.12);
 }
 
 .stats-card .display-6 {
@@ -24,6 +33,11 @@ body {
 .card {
     border-radius: 1rem;
     box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.10);
 }
 
 .table {
@@ -67,10 +81,85 @@ body {
     font-size: 0.95rem;
 }
 
-.form-label {
-    font-weight: 600;
-}
-
 .list-group-item strong {
     margin-right: 0.25rem;
+}
+
+/* Загальний стиль для форм фільтрації */
+.filter-card {
+    border-radius: 1.25rem;
+}
+
+.filter-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem 1.25rem;
+    align-items: end;
+}
+
+.filter-form p {
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-form label {
+    font-weight: 600;
+    margin-bottom: 0.45rem;
+    color: #212529;
+}
+
+.filter-form input,
+.filter-form select,
+.filter-form textarea {
+    width: 100%;
+    min-height: 50px;
+    padding: 0.75rem 0.95rem;
+    font-size: 1.05rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.85rem;
+    background-color: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    appearance: none;
+}
+
+.filter-form input:focus,
+.filter-form select:focus,
+.filter-form textarea:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.filter-form-actions {
+    margin-top: 1.25rem;
+}
+
+.filter-form .date-field input {
+    min-height: 50px;
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2.35rem;
+    }
+}
+
+.filter-form-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 0.25rem;
+}
+
+.filter-form-actions .btn {
+    min-width: 180px;
+    border-radius: 0.85rem;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.filter-form-actions .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.4rem 0.9rem rgba(13, 110, 253, 0.18);
 }

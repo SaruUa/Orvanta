@@ -3,18 +3,35 @@
 {% block title %}Записи{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Список записів</h1>
+<h1 class="page-title">Список записів</h1>
 
 <div class="mb-3">
     <a href="{% url 'appointment_create' %}" class="btn btn-primary">Створити запис</a>
 </div>
 
-<div class="card mb-4">
+<div class="card filter-card mb-4">
     <div class="card-body">
-        <h5 class="card-title">Фільтрація</h5>
-        <form method="get">
-            {{ filter_form.as_p }}
-            <button type="submit" class="btn btn-outline-primary">Застосувати фільтр</button>
+        <h4 class="card-title mb-4">Фільтрація</h4>
+
+        <form method="get" class="filter-form">
+            <p class="date-field">
+                {{ filter_form.appointment_date.label_tag }}
+                {{ filter_form.appointment_date }}
+            </p>
+
+            <p>
+                {{ filter_form.status.label_tag }}
+                {{ filter_form.status }}
+            </p>
+
+            <p>
+                {{ filter_form.employee.label_tag }}
+                {{ filter_form.employee }}
+            </p>
+
+            <div class="filter-form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">Застосувати</button>
+            </div>
         </form>
     </div>
 </div>
@@ -40,9 +57,9 @@
                         <td>{{ appointment.client }}</td>
                         <td>{{ appointment.service }}</td>
                         <td>{{ appointment.employee }}</td>
-                        <td>{{ appointment.appointment_date }}</td>
-                        <td>{{ appointment.start_time }}</td>
-                        <td>{{ appointment.end_time }}</td>
+                        <td>{{ appointment.appointment_date|date:'d.m.Y' }}</td>
+                        <td>{{ appointment.start_time|time:'H:i' }}</td>
+                        <td>{{ appointment.end_time|time:'H:i' }}</td>
                         <td>
                             <span class="status-badge status-{{ appointment.status }}">
                                 {{ appointment.get_status_display }}

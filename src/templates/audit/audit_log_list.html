@@ -5,12 +5,39 @@
 {% block content %}
 <h1 class="page-title">Журнал аудиту</h1>
 
-<div class="card mb-4">
+<div class="card filter-card mb-4">
     <div class="card-body">
-        <h5 class="card-title">Фільтрація</h5>
-        <form method="get">
-            {{ filter_form.as_p }}
-            <button type="submit" class="btn btn-outline-primary">Застосувати</button>
+        <h4 class="card-title mb-4">Фільтрація</h4>
+
+        <form method="get" class="filter-form">
+            <p>
+                {{ filter_form.user.label_tag }}
+                {{ filter_form.user }}
+            </p>
+
+            <p>
+                {{ filter_form.action_type.label_tag }}
+                {{ filter_form.action_type }}
+            </p>
+
+            <p>
+                {{ filter_form.entity_type.label_tag }}
+                {{ filter_form.entity_type }}
+            </p>
+
+            <p class="date-field">
+                {{ filter_form.date_from.label_tag }}
+                {{ filter_form.date_from }}
+            </p>
+
+            <p class="date-field">
+                {{ filter_form.date_to.label_tag }}
+                {{ filter_form.date_to }}
+            </p>
+
+            <div class="filter-form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">Застосувати</button>
+            </div>
         </form>
     </div>
 </div>

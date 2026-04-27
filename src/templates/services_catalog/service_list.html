@@ -3,19 +3,36 @@
 {% block title %}Послуги{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Список послуг</h1>
+<h1 class="page-title">Список послуг</h1>
 
 <div class="mb-3 d-flex gap-2">
     <a href="{% url 'service_create' %}" class="btn btn-primary">Додати послугу</a>
     <a href="{% url 'category_list' %}" class="btn btn-outline-secondary">Категорії послуг</a>
 </div>
 
-<div class="card mb-4">
+<div class="card filter-card mb-4">
     <div class="card-body">
-        <h5 class="card-title">Пошук і фільтрація</h5>
-        <form method="get">
-            {{ filter_form.as_p }}
-            <button type="submit" class="btn btn-outline-primary">Застосувати</button>
+        <h4 class="card-title mb-4">Пошук і фільтрація</h4>
+
+        <form method="get" class="filter-form">
+            <p>
+                {{ filter_form.query.label_tag }}
+                {{ filter_form.query }}
+            </p>
+
+            <p>
+                {{ filter_form.category.label_tag }}
+                {{ filter_form.category }}
+            </p>
+
+            <p>
+                {{ filter_form.is_active.label_tag }}
+                {{ filter_form.is_active }}
+            </p>
+
+            <div class="filter-form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">Застосувати</button>
+            </div>
         </form>
     </div>
 </div>
