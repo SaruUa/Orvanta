@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Журнал аудиту{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Журнал аудиту</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Фільтрація</h5>
+        <form method="get">
+            {{ filter_form.as_p }}
+            <button type="submit" class="btn btn-outline-primary">Застосувати</button>
+        </form>
+    </div>
+</div>
+
+{% if logs %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Користувач</th>
+                    <th>Тип дії</th>
+                    <th>Сутність</th>
+                    <th>ID сутності</th>
+                    <th>Опис</th>
+                    <th>IP-адреса</th>
+                    <th>Дата і час</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                    <tr>
+                        <td>{{ log.user|default:'—' }}</td>
+                        <td>{{ log.get_action_type_display }}</td>
+                        <td>{{ log.get_entity_type_display }}</td>
+                        <td>{{ log.entity_id|default:'—' }}</td>
+                        <td>{{ log.description }}</td>
+                        <td>{{ log.ip_address|default:'—' }}</td>
+                        <td>{{ log.created_at|date:'d.m.Y H:i' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>Записів журналу аудиту не знайдено.</p>
+{% endif %}
+{% endblock %}
