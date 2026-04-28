@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import UserRole
+from .models import User, UserRole
 
 
 class UserFilterForm(forms.Form):
@@ -23,3 +23,9 @@ class UserFilterForm(forms.Form):
             ('false', 'Неактивні'),
         ],
     )
+
+
+class UserRoleForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['role']

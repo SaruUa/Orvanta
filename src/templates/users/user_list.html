@@ -43,6 +43,7 @@
                     <th>Активний</th>
                     <th>Staff</th>
                     <th>Дата реєстрації</th>
+                    <th>Дії</th>
                 </tr>
             </thead>
             <tbody>
@@ -54,6 +55,17 @@
                         <td>{{ user_obj.is_active|yesno:'Так,Ні' }}</td>
                         <td>{{ user_obj.is_staff|yesno:'Так,Ні' }}</td>
                         <td>{{ user_obj.date_joined|date:'d.m.Y H:i' }}</td>
+                        <td class="d-flex gap-2 flex-wrap">
+                            <a href="{% url 'user_edit_role' user_obj.pk %}" class="btn btn-sm btn-outline-primary">Змінити роль</a>
+                            <form method="post" action="{% url 'user_toggle_active' user_obj.pk %}" class="m-0">
+                                {% csrf_token %}
+                                {% if user_obj.is_active %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Деактивувати</button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Активувати</button>
+                                {% endif %}
+                            </form>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

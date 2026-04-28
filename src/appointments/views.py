@@ -1,11 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from users.decorators import employee_manager_admin_required, manager_or_admin_required
 
 from .forms import AppointmentFilterForm, AppointmentForm
-from .models import Appointment, AppointmentStatusHistory
+from .models import Appointment, AppointmentStatus, AppointmentStatusHistory
 
 
 @employee_manager_admin_required
@@ -132,3 +133,42 @@ def appointment_detail_view(request, pk):
             'status_history': status_history,
         },
     )
+
+
+@employee_manager_admin_required
+@require_POST
+def appointment_quick_status_update_view(request, pk, new_status):
+    appointment = get_object_or_404(Appointment, pk=pk)
+
+    if request.user.role == 'employee' and appointment.employee != request.user:
+        messages.error(request, 'У вас немає прав для зміни цього запису.')
+        return redirect('appointment_list')
+
+    allowed_statuses = {
+        AppointmentStatus.CONFIRMED,
+        AppointmentStatus.CANCELLED,
+        AppointmentStatus.COMPLETED,
+    }
+
+    if new_status not in allowed_statuses:
+        messages.error(request, 'Невірна дія для зміни статусу.')
+        return redirect('appointment_list')
+
+    if appointment.status == new_status:
+        messages.error(request, 'Запис уже має цей статус.')
+        return redirect('appointment_list')
+
+    old_status = appointment.status
+    appointment.status = new_status
+    appointment.save(update_fields=['status', 'updated_at'])
+
+    AppointmentStatusHistory.objects.create(
+        appointment=appointment,
+        old_status=old_status,
+        new_status=new_status,
+        changed_by=request.user,
+        comment='Статус змінено швидкою дією зі списку записів.',
+    )
+
+    messages.success(request, 'Статус запису успішно оновлено.')
+    return redirect('appointment_list')

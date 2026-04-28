@@ -65,9 +65,52 @@
                                 {{ appointment.get_status_display }}
                             </span>
                         </td>
-                        <td>
+                        <td class="d-flex gap-2 flex-wrap">
                             <a href="{% url 'appointment_detail' appointment.pk %}" class="btn btn-sm btn-outline-secondary">Перегляд</a>
-                            <a href="{% url 'appointment_update' appointment.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
+                            {% if request.user.role != 'employee' %}
+                                <a href="{% url 'appointment_update' appointment.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
+                            {% endif %}
+
+                            {% if request.user.role != 'employee' or appointment.employee_id == request.user.id %}
+                                {% if appointment.status != 'confirmed' %}
+                                    <form method="post" action="{% url 'appointment_quick_status_update' appointment.pk 'confirmed' %}" class="m-0">
+                                        {% csrf_token %}
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-outline-warning"
+                                            onclick="return confirm('Підтвердити цей запис?');"
+                                        >
+                                            Підтвердити
+                                        </button>
+                                    </form>
+                                {% endif %}
+
+                                {% if appointment.status != 'cancelled' %}
+                                    <form method="post" action="{% url 'appointment_quick_status_update' appointment.pk 'cancelled' %}" class="m-0">
+                                        {% csrf_token %}
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Скасувати цей запис?');"
+                                        >
+                                            Скасувати
+                                        </button>
+                                    </form>
+                                {% endif %}
+
+                                {% if appointment.status != 'completed' %}
+                                    <form method="post" action="{% url 'appointment_quick_status_update' appointment.pk 'completed' %}" class="m-0">
+                                        {% csrf_token %}
+                                        <button
+                                            type="submit"
+                                            class="btn btn-sm btn-outline-success"
+                                            onclick="return confirm('Позначити запис як виконаний?');"
+                                        >
+                                            Виконано
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}
