@@ -10,16 +10,15 @@ from users.decorators import admin_required
 from users.models import User, UserRole
 
 
-@login_required
-def home_view(request):
+def get_dashboard_analytics(user):
     appointments = Appointment.objects.select_related(
         'client',
         'service',
         'employee',
     )
 
-    if request.user.role == UserRole.EMPLOYEE:
-        appointments = appointments.filter(employee=request.user)
+    if user.role == UserRole.EMPLOYEE:
+        appointments = appointments.filter(employee=user)
 
     raw_status_counts = (
         appointments.values('status')
@@ -36,20 +35,13 @@ def home_view(request):
         for item in raw_status_counts
     ]
 
-    nearest_appointments = appointments.order_by('appointment_date', 'start_time')[:5]
-
-    recent_status_changes = AppointmentStatusHistory.objects.select_related(
-        'appointment',
-        'changed_by',
-    ).order_by('-changed_at')[:5]
-
-    popular_services = (
+    popular_services = list(
         appointments.values('service__name')
         .annotate(total=Count('id'))
         .order_by('-total', 'service__name')[:5]
     )
 
-    employee_workload = (
+    employee_workload = list(
         appointments.values('employee__username')
         .annotate(total=Count('id'))
         .order_by('-total', 'employee__username')[:5]
@@ -58,7 +50,8 @@ def home_view(request):
     completed_count = appointments.filter(status=AppointmentStatus.COMPLETED).count()
     cancelled_count = appointments.filter(status=AppointmentStatus.CANCELLED).count()
 
-    context = {
+    return {
+        'appointments_queryset': appointments,
         'clients_count': Client.objects.count(),
         'active_clients_count': Client.objects.filter(is_active=True).count(),
         'services_count': Service.objects.count(),
@@ -68,10 +61,27 @@ def home_view(request):
         'completed_count': completed_count,
         'cancelled_count': cancelled_count,
         'status_counts': status_counts,
-        'nearest_appointments': nearest_appointments,
-        'recent_status_changes': recent_status_changes,
         'popular_services': popular_services,
         'employee_workload': employee_workload,
+    }
+
+
+@login_required
+def home_view(request):
+    analytics = get_dashboard_analytics(request.user)
+    appointments = analytics.pop('appointments_queryset')
+
+    nearest_appointments = appointments.order_by('appointment_date', 'start_time')[:5]
+
+    recent_status_changes = AppointmentStatusHistory.objects.select_related(
+        'appointment',
+        'changed_by',
+    ).order_by('-changed_at')[:5]
+
+    context = {
+        **analytics,
+        'nearest_appointments': nearest_appointments,
+        'recent_status_changes': recent_status_changes,
     }
     return render(request, 'home.html', context)
 
