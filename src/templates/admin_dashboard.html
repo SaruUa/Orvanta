@@ -104,7 +104,8 @@
     </div>
 </div>
 
-<div class="mt-4 d-flex gap-2">
+<div class="mt-4 d-flex gap-2 flex-wrap">
+    <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Користувачі системи</a>
     <a href="/admin/" class="btn btn-outline-dark">Перейти до Django Admin</a>
     <a href="{% url 'audit_log_list' %}" class="btn btn-outline-primary">Відкрити журнал аудиту</a>
 </div>

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Користувачі{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Користувачі системи</h1>
+
+<div class="card filter-card mb-4">
+    <div class="card-body">
+        <h4 class="card-title mb-4">Пошук і фільтрація</h4>
+
+        <form method="get" class="filter-form">
+            <p>
+                {{ filter_form.query.label_tag }}
+                {{ filter_form.query }}
+            </p>
+
+            <p>
+                {{ filter_form.role.label_tag }}
+                {{ filter_form.role }}
+            </p>
+
+            <p>
+                {{ filter_form.is_active.label_tag }}
+                {{ filter_form.is_active }}
+            </p>
+
+            <div class="filter-form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">Застосувати</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if users %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Роль</th>
+                    <th>Активний</th>
+                    <th>Staff</th>
+                    <th>Дата реєстрації</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user_obj in users %}
+                    <tr>
+                        <td>{{ user_obj.username }}</td>
+                        <td>{{ user_obj.email|default:'—' }}</td>
+                        <td>{{ user_obj.get_role_display }}</td>
+                        <td>{{ user_obj.is_active|yesno:'Так,Ні' }}</td>
+                        <td>{{ user_obj.is_staff|yesno:'Так,Ні' }}</td>
+                        <td>{{ user_obj.date_joined|date:'d.m.Y H:i' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>Користувачів не знайдено.</p>
+{% endif %}
+{% endblock %}
