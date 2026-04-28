@@ -12,21 +12,31 @@ from .serializers import AppointmentSerializer, ClientSerializer, ServiceSeriali
 
 
 class ClientViewSet(ReadOnlyModelViewSet):
-    queryset = Client.objects.all()
     serializer_class = ClientSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        return Client.objects.filter(organization=self.request.user.organization)
+
 
 class ServiceViewSet(ReadOnlyModelViewSet):
-    queryset = Service.objects.select_related('category').all()
     serializer_class = ServiceSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        return Service.objects.select_related('category').filter(
+            organization=self.request.user.organization,
+        )
+
 
 class AppointmentViewSet(ReadOnlyModelViewSet):
-    queryset = Appointment.objects.select_related('client', 'service', 'employee').all()
     serializer_class = AppointmentSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Appointment.objects.select_related('client', 'service', 'employee').filter(
+            organization=self.request.user.organization,
+        )
 
 
 class DashboardAnalyticsApiView(APIView):

@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from users.models import Organization
+
 
 class AuditActionType(models.TextChoices):
     LOGIN = 'login', 'Вхід'
@@ -33,6 +35,13 @@ class AuditLog(models.Model):
     entity_id = models.PositiveIntegerField(null=True, blank=True)
     description = models.TextField()
     ip_address = models.GenericIPAddressField(null=True, blank=True)
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='audit_logs',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

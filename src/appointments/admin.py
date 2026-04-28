@@ -12,6 +12,7 @@ class AppointmentStatusHistoryInline(admin.TabularInline):
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
     list_display = (
+        'organization',
         'client',
         'service',
         'employee',
@@ -20,7 +21,7 @@ class AppointmentAdmin(admin.ModelAdmin):
         'end_time',
         'status',
     )
-    list_filter = ('status', 'appointment_date', 'service')
+    list_filter = ('organization', 'status', 'appointment_date', 'service')
     search_fields = ('client__full_name', 'client__phone', 'service__name', 'employee__username')
     readonly_fields = ('created_at', 'updated_at')
     inlines = [AppointmentStatusHistoryInline]
@@ -28,7 +29,7 @@ class AppointmentAdmin(admin.ModelAdmin):
 
 @admin.register(AppointmentStatusHistory)
 class AppointmentStatusHistoryAdmin(admin.ModelAdmin):
-    list_display = ('appointment', 'old_status', 'new_status', 'changed_by', 'changed_at')
-    list_filter = ('old_status', 'new_status', 'changed_at')
+    list_display = ('organization', 'appointment', 'old_status', 'new_status', 'changed_by', 'changed_at')
+    list_filter = ('organization', 'old_status', 'new_status', 'changed_at')
     search_fields = ('appointment__client__full_name', 'appointment__service__name')
     readonly_fields = ('changed_at',)

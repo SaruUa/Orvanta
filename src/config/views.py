@@ -11,11 +11,13 @@ from users.models import User, UserRole
 
 
 def get_dashboard_analytics(user):
+    user_organization = user.organization
+
     appointments = Appointment.objects.select_related(
         'client',
         'service',
         'employee',
-    )
+    ).filter(organization=user_organization)
 
     if user.role == UserRole.EMPLOYEE:
         appointments = appointments.filter(employee=user)
@@ -50,14 +52,20 @@ def get_dashboard_analytics(user):
     completed_count = appointments.filter(status=AppointmentStatus.COMPLETED).count()
     cancelled_count = appointments.filter(status=AppointmentStatus.CANCELLED).count()
 
+    clients = Client.objects.filter(organization=user_organization)
+    services = Service.objects.filter(organization=user_organization)
+
     return {
         'appointments_queryset': appointments,
-        'clients_count': Client.objects.count(),
-        'active_clients_count': Client.objects.filter(is_active=True).count(),
-        'services_count': Service.objects.count(),
-        'active_services_count': Service.objects.filter(is_active=True).count(),
+        'clients_count': clients.count(),
+        'active_clients_count': clients.filter(is_active=True).count(),
+        'services_count': services.count(),
+        'active_services_count': services.filter(is_active=True).count(),
         'appointments_count': appointments.count(),
-        'employees_count': User.objects.filter(role=UserRole.EMPLOYEE).count(),
+        'employees_count': User.objects.filter(
+            role=UserRole.EMPLOYEE,
+            organization=user_organization,
+        ).count(),
         'completed_count': completed_count,
         'cancelled_count': cancelled_count,
         'status_counts': status_counts,
@@ -76,7 +84,7 @@ def home_view(request):
     recent_status_changes = AppointmentStatusHistory.objects.select_related(
         'appointment',
         'changed_by',
-    ).order_by('-changed_at')[:5]
+    ).filter(organization=request.user.organization).order_by('-changed_at')[:5]
 
     context = {
         **analytics,
@@ -88,8 +96,10 @@ def home_view(request):
 
 @admin_required
 def admin_dashboard_view(request):
+    org_users = User.objects.filter(organization=request.user.organization)
+
     role_counts = (
-        User.objects.values('role')
+        org_users.values('role')
         .annotate(total=Count('id'))
         .order_by('role')
     )
@@ -104,12 +114,16 @@ def admin_dashboard_view(request):
     ]
 
     context = {
-        'users_count': User.objects.count(),
-        'clients_count': Client.objects.count(),
-        'services_count': Service.objects.count(),
-        'appointments_count': Appointment.objects.count(),
+        'users_count': org_users.count(),
+        'clients_count': Client.objects.filter(organization=request.user.organization).count(),
+        'services_count': Service.objects.filter(organization=request.user.organization).count(),
+        'appointments_count': Appointment.objects.filter(
+            organization=request.user.organization,
+        ).count(),
         'role_stats': role_stats,
-        'recent_users': User.objects.order_by('-date_joined')[:5],
-        'recent_logs': AuditLog.objects.select_related('user').order_by('-created_at')[:10],
+        'recent_users': org_users.order_by('-date_joined')[:5],
+        'recent_logs': AuditLog.objects.select_related('user').filter(
+            organization=request.user.organization,
+        ).order_by('-created_at')[:10],
     }
     return render(request, 'admin_dashboard.html', context)

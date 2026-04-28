@@ -9,7 +9,7 @@ class AuditLogFilterForm(forms.Form):
     user = forms.ModelChoiceField(
         required=False,
         label='Користувач',
-        queryset=User.objects.all().order_by('username'),
+        queryset=User.objects.none(),
         empty_label='Усі користувачі',
     )
     action_type = forms.ChoiceField(
@@ -32,3 +32,12 @@ class AuditLogFilterForm(forms.Form):
         label='Дата до',
         widget=forms.DateInput(attrs={'type': 'date'}),
     )
+
+    def __init__(self, *args, organization=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organization is None:
+            self.fields['user'].queryset = User.objects.none()
+        else:
+            self.fields['user'].queryset = User.objects.filter(
+                organization=organization,
+            ).order_by('username')

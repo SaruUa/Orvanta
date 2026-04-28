@@ -8,9 +8,14 @@ from .models import AuditLog
 
 @admin_required
 def audit_log_list_view(request):
-    logs = AuditLog.objects.select_related('user').all()
+    logs = AuditLog.objects.select_related('user').filter(
+        organization=request.user.organization,
+    )
 
-    filter_form = AuditLogFilterForm(request.GET or None)
+    filter_form = AuditLogFilterForm(
+        request.GET or None,
+        organization=request.user.organization,
+    )
 
     if filter_form.is_valid():
         user = filter_form.cleaned_data.get('user')

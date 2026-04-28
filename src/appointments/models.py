@@ -3,6 +3,7 @@ from django.db import models
 
 from clients.models import Client
 from services_catalog.models import Service
+from users.models import Organization
 
 
 class AppointmentStatus(models.TextChoices):
@@ -36,6 +37,13 @@ class Appointment(models.Model):
         default=AppointmentStatus.PLANNED,
     )
     comment = models.TextField(blank=True)
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='appointments',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -65,6 +73,13 @@ class AppointmentStatusHistory(models.Model):
     )
     changed_at = models.DateTimeField(auto_now_add=True)
     comment = models.TextField(blank=True)
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='appointment_status_history',
+    )
 
     class Meta:
         ordering = ['-changed_at']

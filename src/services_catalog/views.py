@@ -12,7 +12,7 @@ from .models import Service, ServiceCategory
 
 @login_required
 def category_list_view(request):
-    categories = ServiceCategory.objects.all()
+    categories = ServiceCategory.objects.filter(organization=request.user.organization)
     return render(request, 'services_catalog/category_list.html', {'categories': categories})
 
 
@@ -21,7 +21,13 @@ def category_create_view(request):
     if request.method == 'POST':
         form = ServiceCategoryForm(request.POST)
         if form.is_valid():
-            form.save()
+            if request.user.organization is None:
+                messages.error(request, 'Ваш користувач не прив’язаний до організації.')
+                return redirect('category_list')
+
+            category = form.save(commit=False)
+            category.organization = request.user.organization
+            category.save()
             messages.success(request, 'Категорію послуг успішно створено.')
             return redirect('category_list')
     else:
@@ -35,7 +41,11 @@ def category_create_view(request):
 
 @manager_or_admin_required
 def category_update_view(request, pk):
-    category = get_object_or_404(ServiceCategory, pk=pk)
+    category = get_object_or_404(
+        ServiceCategory,
+        pk=pk,
+        organization=request.user.organization,
+    )
 
     if request.method == 'POST':
         form = ServiceCategoryForm(request.POST, instance=category)
@@ -54,9 +64,14 @@ def category_update_view(request, pk):
 
 @login_required
 def service_list_view(request):
-    services = Service.objects.select_related('category').all()
+    services = Service.objects.select_related('category').filter(
+        organization=request.user.organization,
+    )
 
-    filter_form = ServiceFilterForm(request.GET or None)
+    filter_form = ServiceFilterForm(
+        request.GET or None,
+        organization=request.user.organization,
+    )
 
     if filter_form.is_valid():
         query = filter_form.cleaned_data.get('query')
@@ -90,13 +105,19 @@ def service_list_view(request):
 @manager_or_admin_required
 def service_create_view(request):
     if request.method == 'POST':
-        form = ServiceForm(request.POST)
+        form = ServiceForm(request.POST, organization=request.user.organization)
         if form.is_valid():
-            form.save()
+            if request.user.organization is None:
+                messages.error(request, 'Ваш користувач не прив’язаний до організації.')
+                return redirect('service_list')
+
+            service = form.save(commit=False)
+            service.organization = request.user.organization
+            service.save()
             messages.success(request, 'Послугу успішно створено.')
             return redirect('service_list')
     else:
-        form = ServiceForm()
+        form = ServiceForm(organization=request.user.organization)
 
     return render(request, 'services_catalog/service_form.html', {
         'form': form,
@@ -106,16 +127,29 @@ def service_create_view(request):
 
 @manager_or_admin_required
 def service_update_view(request, pk):
-    service = get_object_or_404(Service, pk=pk)
+    service = get_object_or_404(
+        Service,
+        pk=pk,
+        organization=request.user.organization,
+    )
 
     if request.method == 'POST':
-        form = ServiceForm(request.POST, instance=service)
+        form = ServiceForm(
+            request.POST,
+            instance=service,
+            organization=request.user.organization,
+        )
         if form.is_valid():
-            form.save()
+            updated_service = form.save(commit=False)
+            updated_service.organization = request.user.organization
+            updated_service.save()
             messages.success(request, 'Послугу успішно оновлено.')
             return redirect('service_list')
     else:
-        form = ServiceForm(instance=service)
+        form = ServiceForm(
+            instance=service,
+            organization=request.user.organization,
+        )
 
     return render(request, 'services_catalog/service_form.html', {
         'form': form,
@@ -125,14 +159,23 @@ def service_update_view(request, pk):
 
 @login_required
 def service_detail_view(request, pk):
-    service = get_object_or_404(Service.objects.select_related('category'), pk=pk)
+    service = get_object_or_404(
+        Service.objects.select_related('category').filter(
+            organization=request.user.organization,
+        ),
+        pk=pk,
+    )
     return render(request, 'services_catalog/service_detail.html', {'service': service})
 
 
 @manager_or_admin_required
 @require_POST
 def service_toggle_active_view(request, pk):
-    service = get_object_or_404(Service, pk=pk)
+    service = get_object_or_404(
+        Service,
+        pk=pk,
+        organization=request.user.organization,
+    )
     service.is_active = not service.is_active
     service.save(update_fields=['is_active', 'updated_at'])
 

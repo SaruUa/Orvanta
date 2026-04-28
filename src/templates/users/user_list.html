@@ -3,7 +3,12 @@
 {% block title %}Користувачі{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Користувачі системи</h1>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <h1 class="page-title mb-0">Користувачі системи</h1>
+    {% if request.user.role == 'admin' %}
+        <a href="{% url 'user_create' %}" class="btn btn-primary">Створити користувача</a>
+    {% endif %}
+</div>
 
 <div class="card filter-card mb-4">
     <div class="card-body">

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Створення користувача{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Створення користувача</h1>
+
+<div class="mb-3">
+    <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Назад до списку користувачів</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                <p class="mb-3">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <small class="text-danger d-block mt-1">{{ error }}</small>
+                    {% endfor %}
+                </p>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">Створити користувача</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

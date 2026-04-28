@@ -12,7 +12,7 @@ from .models import Client
 
 @login_required
 def client_list_view(request):
-    clients = Client.objects.all()
+    clients = Client.objects.filter(organization=request.user.organization)
 
     filter_form = ClientFilterForm(request.GET or None)
 
@@ -47,8 +47,13 @@ def client_create_view(request):
     if request.method == 'POST':
         form = ClientForm(request.POST)
         if form.is_valid():
+            if request.user.organization is None:
+                messages.error(request, 'Ваш користувач не прив’язаний до організації.')
+                return redirect('client_list')
+
             client = form.save(commit=False)
             client.created_by = request.user
+            client.organization = request.user.organization
             client.save()
             messages.success(request, 'Клієнта успішно створено.')
             return redirect('client_list')
@@ -63,7 +68,11 @@ def client_create_view(request):
 
 @manager_or_admin_required
 def client_update_view(request, pk):
-    client = get_object_or_404(Client, pk=pk)
+    client = get_object_or_404(
+        Client,
+        pk=pk,
+        organization=request.user.organization,
+    )
 
     if request.method == 'POST':
         form = ClientForm(request.POST, instance=client)
@@ -82,14 +91,22 @@ def client_update_view(request, pk):
 
 @login_required
 def client_detail_view(request, pk):
-    client = get_object_or_404(Client, pk=pk)
+    client = get_object_or_404(
+        Client,
+        pk=pk,
+        organization=request.user.organization,
+    )
     return render(request, 'clients/client_detail.html', {'client': client})
 
 
 @manager_or_admin_required
 @require_POST
 def client_toggle_active_view(request, pk):
-    client = get_object_or_404(Client, pk=pk)
+    client = get_object_or_404(
+        Client,
+        pk=pk,
+        organization=request.user.organization,
+    )
     client.is_active = not client.is_active
     client.save(update_fields=['is_active', 'updated_at'])
 

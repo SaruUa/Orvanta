@@ -18,10 +18,23 @@ _TRACKED_MODELS = {
 }
 
 
+def get_instance_organization(instance):
+    organization = getattr(instance, 'organization', None)
+    return organization if organization else None
+
+
+def get_user_organization(user):
+    if user is None:
+        return None
+    organization = getattr(user, 'organization', None)
+    return organization if organization else None
+
+
 @receiver(user_logged_in)
 def log_user_login(sender, request, user, **kwargs):
     AuditLog.objects.create(
         user=user,
+        organization=get_user_organization(user),
         action_type=AuditActionType.LOGIN,
         entity_type=AuditEntityType.AUTH,
         entity_id=user.id,
@@ -37,6 +50,7 @@ def log_user_logout(sender, request, user, **kwargs):
 
     AuditLog.objects.create(
         user=user,
+        organization=get_user_organization(user),
         action_type=AuditActionType.LOGOUT,
         entity_type=AuditEntityType.AUTH,
         entity_id=user.id,
@@ -86,9 +100,11 @@ def log_model_save(sender, instance, created, **kwargs):
         description = f"Оновлено об'єкт {sender.__name__} з id={instance.pk}."
 
     acting_user = getattr(instance, "created_by", None)
+    organization = get_instance_organization(instance) or get_user_organization(acting_user)
 
     AuditLog.objects.create(
         user=acting_user if acting_user else None,
+        organization=organization,
         action_type=action_type,
         entity_type=entity_type,
         entity_id=instance.pk,
@@ -103,9 +119,11 @@ def log_model_delete(sender, instance, **kwargs):
 
     entity_type = _TRACKED_MODELS[sender]
     acting_user = getattr(instance, "created_by", None)
+    organization = get_instance_organization(instance) or get_user_organization(acting_user)
 
     AuditLog.objects.create(
         user=acting_user if acting_user else None,
+        organization=organization,
         action_type=AuditActionType.DELETE,
         entity_type=entity_type,
         entity_id=instance.pk,

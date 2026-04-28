@@ -7,22 +7,39 @@ from rest_framework.test import APIClient, APITestCase
 from appointments.models import Appointment, AppointmentStatus
 from clients.models import Client
 from services_catalog.models import Service, ServiceCategory
-from users.models import UserRole
+from users.models import Organization, UserRole
 
 
 class ReadOnlyApiTests(APITestCase):
     def setUp(self):
         user_model = get_user_model()
+        self.organization = Organization.objects.create(
+            name='Org One',
+            slug='org-one',
+        )
+        self.other_organization = Organization.objects.create(
+            name='Org Two',
+            slug='org-two',
+        )
+
         self.user = user_model.objects.create_user(
             username='api_user',
             password='testpass123',
             role=UserRole.ADMIN,
+            organization=self.organization,
         )
 
         self.employee = user_model.objects.create_user(
             username='employee_1',
             password='testpass123',
             role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
+        self.other_employee = user_model.objects.create_user(
+            username='employee_2',
+            password='testpass123',
+            role=UserRole.EMPLOYEE,
+            organization=self.other_organization,
         )
 
         self.client.force_authenticate(user=self.user)
@@ -32,38 +49,80 @@ class ReadOnlyApiTests(APITestCase):
             phone='+380501112233',
             email='ivan@example.com',
             created_by=self.user,
+            organization=self.organization,
         )
-        self.category = ServiceCategory.objects.create(name='Тату')
+        self.other_client = Client.objects.create(
+            full_name='Марія Іванова',
+            phone='+380501112244',
+            email='maria@example.com',
+            created_by=self.user,
+            organization=self.other_organization,
+        )
+
+        self.category = ServiceCategory.objects.create(
+            name='Тату',
+            organization=self.organization,
+        )
+        self.other_category = ServiceCategory.objects.create(
+            name='Пірсинг',
+            organization=self.other_organization,
+        )
         self.service = Service.objects.create(
             category=self.category,
             name='Контур',
             description='Контурна робота',
             price='1200.00',
             duration_minutes=90,
+            organization=self.organization,
+        )
+        self.other_service = Service.objects.create(
+            category=self.other_category,
+            name='Септум',
+            description='Пірсинг септуму',
+            price='900.00',
+            duration_minutes=45,
+            organization=self.other_organization,
         )
         self.appointment = Appointment.objects.create(
             client=self.client_entity,
             service=self.service,
             employee=self.employee,
             created_by=self.user,
+            organization=self.organization,
             appointment_date=date(2026, 4, 28),
             start_time=time(12, 0),
             end_time=time(13, 30),
             status=AppointmentStatus.CONFIRMED,
         )
+        self.other_appointment = Appointment.objects.create(
+            client=self.other_client,
+            service=self.other_service,
+            employee=self.other_employee,
+            created_by=self.other_employee,
+            organization=self.other_organization,
+            appointment_date=date(2026, 4, 29),
+            start_time=time(14, 0),
+            end_time=time(15, 0),
+            status=AppointmentStatus.PLANNED,
+        )
 
     def test_clients_list_and_detail(self):
         list_response = self.client.get('/api/clients/')
         self.assertEqual(list_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(list_response.data), 1)
         self.assertEqual(list_response.data[0]['id'], self.client_entity.id)
 
         detail_response = self.client.get(f'/api/clients/{self.client_entity.id}/')
         self.assertEqual(detail_response.status_code, status.HTTP_200_OK)
         self.assertEqual(detail_response.data['full_name'], self.client_entity.full_name)
 
+        other_detail_response = self.client.get(f'/api/clients/{self.other_client.id}/')
+        self.assertEqual(other_detail_response.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_services_list_and_detail(self):
         list_response = self.client.get('/api/services/')
         self.assertEqual(list_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(list_response.data), 1)
         self.assertEqual(list_response.data[0]['category_name'], self.category.name)
 
         detail_response = self.client.get(f'/api/services/{self.service.id}/')
@@ -71,9 +130,13 @@ class ReadOnlyApiTests(APITestCase):
         self.assertEqual(detail_response.data['name'], self.service.name)
         self.assertEqual(detail_response.data['category_name'], self.category.name)
 
+        other_detail_response = self.client.get(f'/api/services/{self.other_service.id}/')
+        self.assertEqual(other_detail_response.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_appointments_list_and_detail(self):
         list_response = self.client.get('/api/appointments/')
         self.assertEqual(list_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(list_response.data), 1)
 
         appointment_data = list_response.data[0]
         self.assertEqual(appointment_data['client_full_name'], self.client_entity.full_name)
@@ -90,6 +153,9 @@ class ReadOnlyApiTests(APITestCase):
         self.assertEqual(detail_response.data['appointment_date'], '2026-04-28')
         self.assertEqual(detail_response.data['start_time'], '12:00:00')
         self.assertEqual(detail_response.data['end_time'], '13:30:00')
+
+        other_detail_response = self.client.get(f'/api/appointments/{self.other_appointment.id}/')
+        self.assertEqual(other_detail_response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_endpoints_are_read_only(self):
         response = self.client.post('/api/clients/', data={'full_name': 'Тест'})
@@ -133,3 +199,32 @@ class ReadOnlyApiTests(APITestCase):
             self.employee.username,
         )
         self.assertEqual(response.data['employee_workload'][0]['total'], 1)
+
+    def test_employee_dashboard_shows_only_own_appointments(self):
+        user_model = get_user_model()
+        colleague = user_model.objects.create_user(
+            username='employee_3',
+            password='testpass123',
+            role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
+        Appointment.objects.create(
+            client=self.client_entity,
+            service=self.service,
+            employee=colleague,
+            created_by=self.user,
+            organization=self.organization,
+            appointment_date=date(2026, 4, 30),
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            status=AppointmentStatus.PLANNED,
+        )
+
+        self.client.force_authenticate(user=self.employee)
+        response = self.client.get('/api/dashboard/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['appointments_count'], 1)
+        self.assertEqual(response.data['status_counts'][0]['status'], 'Підтверджено')
+        self.assertEqual(response.data['status_counts'][0]['total'], 1)
+        self.assertEqual(response.data['employee_workload'][0]['employee_username'], self.employee.username)

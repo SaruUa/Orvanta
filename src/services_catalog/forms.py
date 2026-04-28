@@ -20,6 +20,15 @@ class ServiceForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 4}),
         }
 
+    def __init__(self, *args, organization=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organization is None:
+            self.fields['category'].queryset = ServiceCategory.objects.none()
+        else:
+            self.fields['category'].queryset = ServiceCategory.objects.filter(
+                organization=organization,
+            ).order_by('name')
+
 
 class ServiceFilterForm(forms.Form):
     query = forms.CharField(
@@ -30,7 +39,7 @@ class ServiceFilterForm(forms.Form):
     category = forms.ModelChoiceField(
         required=False,
         label='Категорія',
-        queryset=ServiceCategory.objects.all().order_by('name'),
+        queryset=ServiceCategory.objects.none(),
         empty_label='Усі категорії',
     )
     is_active = forms.ChoiceField(
@@ -42,3 +51,12 @@ class ServiceFilterForm(forms.Form):
             ('false', 'Неактивні'),
         ],
     )
+
+    def __init__(self, *args, organization=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organization is None:
+            self.fields['category'].queryset = ServiceCategory.objects.none()
+        else:
+            self.fields['category'].queryset = ServiceCategory.objects.filter(
+                organization=organization,
+            ).order_by('name')
