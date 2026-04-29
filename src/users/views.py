@@ -1,5 +1,7 @@
-from django.contrib.auth import login
 from django.contrib import messages
+from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
@@ -7,7 +9,13 @@ from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
 from .decorators import admin_required
-from .forms import OrganizationUserCreateForm, SignupForm, UserFilterForm, UserRoleForm
+from .forms import (
+    OrganizationUserCreateForm,
+    SignupForm,
+    UserFilterForm,
+    UserProfileForm,
+    UserRoleForm,
+)
 from .models import Organization, User, UserRole
 
 
@@ -176,5 +184,49 @@ def user_edit_role_view(request, pk):
         {
             'form': form,
             'user_obj': user_obj,
+        },
+    )
+
+
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Профіль успішно оновлено.')
+            return redirect('profile')
+    else:
+        form = UserProfileForm(instance=request.user)
+
+    return render(
+        request,
+        'users/profile.html',
+        {
+            'form': form,
+        },
+    )
+
+
+@login_required
+def profile_password_change_view(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Пароль успішно змінено.')
+            return redirect('profile')
+    else:
+        form = PasswordChangeForm(request.user)
+
+    for field in form.fields.values():
+        field.widget.attrs['class'] = 'form-control'
+
+    return render(
+        request,
+        'users/password_change.html',
+        {
+            'form': form,
         },
     )

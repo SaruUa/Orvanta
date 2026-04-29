@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Профіль{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Мій профіль</h1>
+
+<div class="row g-4">
+    <div class="col-xl-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Основна інформація</h2>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Username</dt>
+                    <dd class="col-sm-7">{{ request.user.username }}</dd>
+
+                    <dt class="col-sm-5">Email</dt>
+                    <dd class="col-sm-7">{{ request.user.email|default:'—' }}</dd>
+
+                    <dt class="col-sm-5">Роль</dt>
+                    <dd class="col-sm-7">{{ request.user.get_role_display }}</dd>
+
+                    <dt class="col-sm-5">Організація</dt>
+                    <dd class="col-sm-7">
+                        {% if request.user.organization %}
+                            {{ request.user.organization.name }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-5">Дата реєстрації</dt>
+                    <dd class="col-sm-7">{{ request.user.date_joined|date:'d.m.Y H:i' }}</dd>
+
+                    <dt class="col-sm-5">Останній вхід</dt>
+                    <dd class="col-sm-7">{{ request.user.last_login|date:'d.m.Y H:i'|default:'—' }}</dd>
+
+                    <dt class="col-sm-5">Активний</dt>
+                    <dd class="col-sm-7">{{ request.user.is_active|yesno:'Так,Ні' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Редагування профілю</h2>
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {% for error in form.non_field_errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <p class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <small class="text-danger d-block mt-1">{{ error }}</small>
+                            {% endfor %}
+                        </p>
+                    {% endfor %}
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="submit" class="btn btn-primary">Зберегти</button>
+                        <a href="{% url 'profile_password_change' %}" class="btn btn-outline-secondary">Змінити пароль</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

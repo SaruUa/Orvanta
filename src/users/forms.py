@@ -79,3 +79,21 @@ class OrganizationUserCreateForm(UserCreationForm):
         if role not in {UserRole.MANAGER, UserRole.EMPLOYEE}:
             raise forms.ValidationError('Недопустима роль для створення користувача.')
         return role
+
+
+class UserProfileForm(forms.ModelForm):
+    email = forms.EmailField(label='Email', required=True)
+
+    class Meta:
+        model = User
+        fields = ['email']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['email'].widget.attrs['class'] = 'form-control'
+
+    def clean_email(self):
+        email = self.cleaned_data['email'].strip().lower()
+        if User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('Користувач із такою email-адресою вже існує.')
+        return email

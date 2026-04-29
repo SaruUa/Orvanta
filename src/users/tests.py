@@ -165,3 +165,109 @@ class OrganizationUserCreateTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(User.objects.filter(username='forbidden_admin').exists())
+
+
+class UserProfileTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(name='Profile Org', slug='profile-org')
+        self.other_organization = Organization.objects.create(name='Other Org', slug='other-org')
+        self.user = User.objects.create_user(
+            username='profile_user',
+            email='profile_user@example.com',
+            password='StrongPass123!',
+            role=UserRole.MANAGER,
+            organization=self.organization,
+            is_active=True,
+            is_staff=False,
+            is_superuser=False,
+        )
+
+    def test_unauthenticated_user_cannot_open_profile(self):
+        response = self.client.get(reverse('profile'))
+        self.assertRedirects(response, f"{reverse('login')}?next={reverse('profile')}")
+
+    def test_authenticated_user_can_open_profile(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('profile'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.user.username)
+        self.assertContains(response, self.organization.name)
+
+    def test_user_can_update_email(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('profile'),
+            data={'email': 'new_profile_email@example.com'},
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('profile'))
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, 'new_profile_email@example.com')
+        self.assertContains(response, 'Профіль успішно оновлено.')
+
+    def test_profile_post_cannot_override_protected_fields(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('profile'),
+            data={
+                'email': 'secure_profile_email@example.com',
+                'role': UserRole.ADMIN,
+                'organization': self.other_organization.pk,
+                'is_staff': True,
+                'is_superuser': True,
+                'is_active': False,
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('profile'))
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, 'secure_profile_email@example.com')
+        self.assertEqual(self.user.role, UserRole.MANAGER)
+        self.assertEqual(self.user.organization, self.organization)
+        self.assertFalse(self.user.is_staff)
+        self.assertFalse(self.user.is_superuser)
+        self.assertTrue(self.user.is_active)
+
+    def test_user_can_change_password_and_stays_authenticated(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('profile_password_change'),
+            data={
+                'old_password': 'StrongPass123!',
+                'new_password1': 'NewStrongPass456!',
+                'new_password2': 'NewStrongPass456!',
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('profile'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('NewStrongPass456!'))
+        self.assertEqual(self.client.session.get('_auth_user_id'), str(self.user.pk))
+
+        profile_response = self.client.get(reverse('profile'))
+        self.assertEqual(profile_response.status_code, 200)
+        self.assertContains(response, 'Пароль успішно змінено.')
+
+    def test_password_not_changed_with_incorrect_old_password(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('profile_password_change'),
+            data={
+                'old_password': 'WrongPass123!',
+                'new_password1': 'AnotherStrongPass456!',
+                'new_password2': 'AnotherStrongPass456!',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('StrongPass123!'))
+        self.assertFalse(self.user.check_password('AnotherStrongPass456!'))
