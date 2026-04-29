@@ -53,8 +53,10 @@ class AppointmentForm(forms.ModelForm):
         client = cleaned_data.get('client')
         service = cleaned_data.get('service')
         employee = cleaned_data.get('employee')
+        appointment_date = cleaned_data.get('appointment_date')
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
+        status = cleaned_data.get('status')
 
         if self.organization:
             if client and client.organization_id != self.organization.id:
@@ -68,6 +70,30 @@ class AppointmentForm(forms.ModelForm):
             raise forms.ValidationError(
                 'Час завершення запису повинен бути пізнішим за час початку.'
             )
+
+        if (
+            self.organization
+            and employee
+            and appointment_date
+            and start_time
+            and end_time
+            and status != AppointmentStatus.CANCELLED
+        ):
+            overlapping_appointments = Appointment.objects.filter(
+                organization=self.organization,
+                employee=employee,
+                appointment_date=appointment_date,
+                start_time__lt=end_time,
+                end_time__gt=start_time,
+            ).exclude(status=AppointmentStatus.CANCELLED)
+
+            if self.instance.pk:
+                overlapping_appointments = overlapping_appointments.exclude(pk=self.instance.pk)
+
+            if overlapping_appointments.exists():
+                raise forms.ValidationError(
+                    'У цього співробітника вже є запис на обраний проміжок часу.'
+                )
 
         return cleaned_data
 

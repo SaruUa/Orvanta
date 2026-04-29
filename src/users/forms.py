@@ -1,5 +1,6 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.db.models import Q
 
 from .models import Organization, User, UserRole
 
@@ -97,3 +98,63 @@ class UserProfileForm(forms.ModelForm):
         if User.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError('Користувач із такою email-адресою вже існує.')
         return email
+
+
+class OrganizationSettingsForm(forms.ModelForm):
+    class Meta:
+        model = Organization
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].widget.attrs['class'] = 'form-control'
+
+
+class OrganizationAuthenticationForm(AuthenticationForm):
+    organization = forms.CharField(
+        label='Організація',
+        required=False,
+        max_length=255,
+    )
+
+    error_messages = {
+        'invalid_login': 'Невірні дані входу або організація.',
+        'inactive': 'Цей обліковий запис неактивний.',
+    }
+
+    def __init__(self, request=None, *args, **kwargs):
+        super().__init__(request, *args, **kwargs)
+        self.order_fields(['username', 'password', 'organization'])
+
+        for field in self.fields.values():
+            existing_class = field.widget.attrs.get('class', '')
+            field.widget.attrs['class'] = f'{existing_class} form-control'.strip()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        user = self.get_user()
+        organization_value = (cleaned_data.get('organization') or '').strip()
+
+        if user is None:
+            return cleaned_data
+
+        if user.is_superuser and user.organization_id is None and not organization_value:
+            return cleaned_data
+
+        if not organization_value:
+            raise self.get_invalid_login_error()
+
+        organization = Organization.objects.filter(
+            Q(slug__iexact=organization_value) | Q(name__iexact=organization_value),
+        ).first()
+
+        if organization is None:
+            raise self.get_invalid_login_error()
+
+        if user.organization_id != organization.id:
+            raise self.get_invalid_login_error()
+
+        if user.organization_id is None:
+            raise self.get_invalid_login_error()
+
+        return cleaned_data

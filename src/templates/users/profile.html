@@ -47,9 +47,9 @@
             <div class="card-body">
                 <h2 class="h5 mb-3">Редагування профілю</h2>
 
-                {% if form.non_field_errors %}
+                {% if profile_form.non_field_errors %}
                     <div class="alert alert-danger" role="alert">
-                        {% for error in form.non_field_errors %}
+                        {% for error in profile_form.non_field_errors %}
                             <div>{{ error }}</div>
                         {% endfor %}
                     </div>
@@ -57,7 +57,7 @@
 
                 <form method="post">
                     {% csrf_token %}
-                    {% for field in form %}
+                    {% for field in profile_form %}
                         <p class="mb-3">
                             {{ field.label_tag }}
                             {{ field }}
@@ -67,10 +67,66 @@
                         </p>
                     {% endfor %}
                     <div class="d-flex gap-2 flex-wrap">
-                        <button type="submit" class="btn btn-primary">Зберегти</button>
+                        <button type="submit" name="profile_submit" class="btn btn-primary">Зберегти</button>
                         <a href="{% url 'profile_password_change' %}" class="btn btn-outline-secondary">Змінити пароль</a>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Організація</h2>
+
+                <dl class="row mb-3">
+                    <dt class="col-sm-3">Назва</dt>
+                    <dd class="col-sm-9">
+                        {% if organization %}
+                            {{ organization.name }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-3">Slug</dt>
+                    <dd class="col-sm-9">
+                        {% if organization %}
+                            {{ organization.slug }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </dd>
+                </dl>
+
+                {% if can_edit_organization and organization_form %}
+                    {% if organization_form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in organization_form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <p class="mb-3">
+                            {{ organization_form.name.label_tag }}
+                            {{ organization_form.name }}
+                            {% for error in organization_form.name.errors %}
+                                <small class="text-danger d-block mt-1">{{ error }}</small>
+                            {% endfor %}
+                        </p>
+                        <button type="submit" name="organization_submit" class="btn btn-primary">
+                            Оновити назву організації
+                        </button>
+                    </form>
+                {% else %}
+                    <p class="text-muted mb-0">
+                        Редагування назви організації доступне лише адміністратору організації.
+                    </p>
+                {% endif %}
             </div>
         </div>
     </div>

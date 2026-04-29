@@ -9,17 +9,18 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
+<a href="/admin/" class="login-dev-link">Для розробників</a>
 <div class="login-page">
     <div class="login-card">
         <div class="login-card-header">
             <div class="login-brand">InkManager</div>
-            <p class="login-subtitle">Вхід до інформаційної системи</p>
+            <p class="login-subtitle">Вхід до веб-системи управління даними</p>
         </div>
 
         <div class="login-card-body">
             {% if form.errors %}
                 <div class="alert alert-danger login-alert" role="alert">
-                    Невірне ім'я користувача або пароль.
+                    Невірні дані входу або організація.
                 </div>
             {% endif %}
 
@@ -37,13 +38,21 @@
 
             <form method="post" class="login-form">
                 {% csrf_token %}
-                {{ form.as_p }}
+                {% for field in form %}
+                    <p>
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <small class="text-danger d-block mt-1">{{ error }}</small>
+                        {% endfor %}
+                    </p>
+                {% endfor %}
                 <button type="submit" class="btn btn-primary login-submit">Увійти</button>
             </form>
 
             <div class="login-footer">
                 <div class="mb-2">Ще не маєте акаунта? <a href="{% url 'signup' %}">Зареєструватися</a></div>
-                Система управління даними для тату-салону
+                Веб-система управління даними для бізнесу у сфері послуг
             </div>
         </div>
     </div>

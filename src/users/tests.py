@@ -271,3 +271,247 @@ class UserProfileTests(TestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('StrongPass123!'))
         self.assertFalse(self.user.check_password('AnotherStrongPass456!'))
+
+
+class OrganizationLoginTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(name='Login Org', slug='login-org')
+        self.other_organization = Organization.objects.create(name='Other Login Org', slug='other-login-org')
+        self.user = User.objects.create_user(
+            username='login_user',
+            email='login_user@example.com',
+            password='StrongPass123!',
+            role=UserRole.MANAGER,
+            organization=self.organization,
+        )
+
+    def test_user_can_login_with_correct_organization(self):
+        response = self.client.post(
+            reverse('login'),
+            data={
+                'username': 'login_user',
+                'password': 'StrongPass123!',
+                'organization': 'login-org',
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('home'))
+        self.assertEqual(response.wsgi_request.user.pk, self.user.pk)
+
+    def test_user_cannot_login_with_wrong_organization(self):
+        response = self.client.post(
+            reverse('login'),
+            data={
+                'username': 'login_user',
+                'password': 'StrongPass123!',
+                'organization': 'other-login-org',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Невірні дані входу або організація.')
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_user_cannot_login_without_organization(self):
+        response = self.client.post(
+            reverse('login'),
+            data={
+                'username': 'login_user',
+                'password': 'StrongPass123!',
+                'organization': '',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Невірні дані входу або організація.')
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_login_failure_uses_generic_message(self):
+        wrong_org_response = self.client.post(
+            reverse('login'),
+            data={
+                'username': 'login_user',
+                'password': 'StrongPass123!',
+                'organization': 'wrong-org',
+            },
+        )
+        wrong_password_response = self.client.post(
+            reverse('login'),
+            data={
+                'username': 'login_user',
+                'password': 'WrongPass123!',
+                'organization': 'login-org',
+            },
+        )
+
+        self.assertContains(wrong_org_response, 'Невірні дані входу або організація.')
+        self.assertContains(wrong_password_response, 'Невірні дані входу або організація.')
+
+    def test_superuser_without_organization_can_still_login(self):
+        superuser = User.objects.create_superuser(
+            username='global_admin',
+            email='global_admin@example.com',
+            password='StrongPass123!',
+        )
+
+        response = self.client.post(
+            reverse('login'),
+            data={
+                'username': 'global_admin',
+                'password': 'StrongPass123!',
+                'organization': '',
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('home'))
+        self.assertEqual(response.wsgi_request.user.pk, superuser.pk)
+
+
+class OrganizationSettingsInProfileTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(name='Org One', slug='org-one')
+        self.other_organization = Organization.objects.create(name='Org Two', slug='org-two')
+
+        self.admin_user = User.objects.create_user(
+            username='settings_admin',
+            email='settings_admin@example.com',
+            password='StrongPass123!',
+            role=UserRole.ADMIN,
+            organization=self.organization,
+        )
+        self.manager_user = User.objects.create_user(
+            username='settings_manager',
+            email='settings_manager@example.com',
+            password='StrongPass123!',
+            role=UserRole.MANAGER,
+            organization=self.organization,
+        )
+        self.employee_user = User.objects.create_user(
+            username='settings_employee',
+            email='settings_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
+        self.other_admin_user = User.objects.create_user(
+            username='other_admin',
+            email='other_admin@example.com',
+            password='StrongPass123!',
+            role=UserRole.ADMIN,
+            organization=self.other_organization,
+        )
+
+    def test_organization_settings_route_redirects_to_profile(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse('organization_settings'))
+        self.assertRedirects(response, reverse('profile'))
+
+    def test_admin_can_change_organization_name_via_profile(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse('profile'),
+            data={
+                'organization_submit': '1',
+                'name': 'Org One Updated',
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('profile'))
+        self.organization.refresh_from_db()
+        self.assertEqual(self.organization.name, 'Org One Updated')
+        self.assertContains(response, 'Назву організації успішно оновлено.')
+
+    def test_manager_and_employee_cannot_change_organization_name_via_profile(self):
+        for user in (self.manager_user, self.employee_user):
+            self.client.force_login(user)
+
+            response = self.client.post(
+                reverse('profile'),
+                data={
+                    'organization_submit': '1',
+                    'name': 'Blocked Rename',
+                    'slug': 'blocked-slug',
+                },
+                follow=True,
+            )
+            self.assertRedirects(response, reverse('profile'))
+            self.assertContains(response, 'У вас немає прав для редагування організації.')
+
+            self.organization.refresh_from_db()
+            self.assertEqual(self.organization.name, 'Org One')
+            self.assertEqual(self.organization.slug, 'org-one')
+            self.client.logout()
+
+    def test_slug_does_not_change_on_name_change_or_slug_tampering(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse('profile'),
+            data={
+                'organization_submit': '1',
+                'name': 'Renamed Organization',
+                'slug': 'hacked-slug-value',
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('profile'))
+        self.organization.refresh_from_db()
+        self.assertEqual(self.organization.name, 'Renamed Organization')
+        self.assertEqual(self.organization.slug, 'org-one')
+
+    def test_user_cannot_change_foreign_organization(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse('profile'),
+            data={
+                'organization_submit': '1',
+                'name': 'Org One Secure Rename',
+                'organization_id': self.other_organization.pk,
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('profile'))
+        self.organization.refresh_from_db()
+        self.other_organization.refresh_from_db()
+        self.assertEqual(self.organization.name, 'Org One Secure Rename')
+        self.assertEqual(self.other_organization.name, 'Org Two')
+
+    def test_profile_page_shows_edit_organization_ui_only_for_admin(self):
+        self.client.force_login(self.admin_user)
+        admin_response = self.client.get(reverse('profile'))
+        self.assertContains(admin_response, 'Оновити назву організації')
+
+        self.client.force_login(self.manager_user)
+        manager_response = self.client.get(reverse('profile'))
+        self.assertNotContains(manager_response, 'Оновити назву організації')
+
+
+class NavigationUiTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(name='Nav Org', slug='nav-org')
+        self.admin_user = User.objects.create_user(
+            username='nav_admin',
+            email='nav_admin@example.com',
+            password='StrongPass123!',
+            role=UserRole.ADMIN,
+            organization=self.organization,
+        )
+
+    def test_login_page_has_developer_link_to_django_admin(self):
+        response = self.client.get(reverse('login'))
+        self.assertContains(response, 'Для розробників')
+        self.assertContains(response, 'href="/admin/"')
+
+    def test_authenticated_layout_does_not_show_django_admin_link(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'href="/admin/"')
+        self.assertNotContains(response, reverse('organization_settings'))
