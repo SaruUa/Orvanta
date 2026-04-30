@@ -12,6 +12,8 @@
 <ul class="list-group mb-4">
     <li class="list-group-item"><strong>Клієнт:</strong> {{ appointment.client }}</li>
     <li class="list-group-item"><strong>Послуга:</strong> {{ appointment.service }}</li>
+    <li class="list-group-item"><strong>Базова вартість послуги:</strong> {{ appointment.service.price }}</li>
+    <li class="list-group-item"><strong>Фактична вартість запису:</strong> {{ appointment.actual_price|default:"—" }}</li>
     <li class="list-group-item"><strong>Співробітник:</strong> {{ appointment.employee }}</li>
     <li class="list-group-item"><strong>Дата:</strong> {{ appointment.appointment_date }}</li>
     <li class="list-group-item"><strong>Час початку:</strong> {{ appointment.start_time }}</li>

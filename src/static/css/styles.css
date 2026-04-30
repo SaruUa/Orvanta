@@ -192,6 +192,11 @@ body {
     white-space: nowrap;
 }
 
+.actual-price-input {
+    min-width: 7.5rem;
+    width: 7.5rem;
+}
+
 
 /* Login page */
 .login-page {

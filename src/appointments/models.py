@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 
 from clients.models import Client
@@ -31,6 +32,15 @@ class Appointment(models.Model):
     appointment_date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
+    actual_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+        verbose_name='Фактична вартість',
+        help_text='Може відрізнятися від базової вартості послуги.',
+    )
     status = models.CharField(
         max_length=20,
         choices=AppointmentStatus.choices,

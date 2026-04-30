@@ -1,4 +1,5 @@
 from datetime import date, time
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -93,6 +94,7 @@ class ReadOnlyApiTests(APITestCase):
             start_time=time(12, 0),
             end_time=time(13, 30),
             status=AppointmentStatus.CONFIRMED,
+            actual_price='1300.00',
         )
         self.other_appointment = Appointment.objects.create(
             client=self.other_client,
@@ -143,6 +145,7 @@ class ReadOnlyApiTests(APITestCase):
         self.assertEqual(appointment_data['service_name'], self.service.name)
         self.assertEqual(appointment_data['employee_username'], self.employee.username)
         self.assertEqual(appointment_data['status'], AppointmentStatus.CONFIRMED)
+        self.assertEqual(appointment_data['actual_price'], '1300.00')
 
         detail_response = self.client.get(f'/api/appointments/{self.appointment.id}/')
         self.assertEqual(detail_response.status_code, status.HTTP_200_OK)
@@ -153,6 +156,7 @@ class ReadOnlyApiTests(APITestCase):
         self.assertEqual(detail_response.data['appointment_date'], '2026-04-28')
         self.assertEqual(detail_response.data['start_time'], '12:00:00')
         self.assertEqual(detail_response.data['end_time'], '13:30:00')
+        self.assertEqual(detail_response.data['actual_price'], '1300.00')
 
         other_detail_response = self.client.get(f'/api/appointments/{self.other_appointment.id}/')
         self.assertEqual(other_detail_response.status_code, status.HTTP_404_NOT_FOUND)
@@ -179,6 +183,9 @@ class ReadOnlyApiTests(APITestCase):
             'employees_count',
             'completed_count',
             'cancelled_count',
+            'total_revenue',
+            'average_check',
+            'revenue_appointments_count',
             'status_counts',
             'popular_services',
             'employee_workload',
@@ -189,6 +196,9 @@ class ReadOnlyApiTests(APITestCase):
         self.assertEqual(response.data['appointments_count'], 1)
         self.assertEqual(response.data['completed_count'], 0)
         self.assertEqual(response.data['cancelled_count'], 0)
+        self.assertEqual(Decimal(str(response.data['total_revenue'])), Decimal('0.00'))
+        self.assertEqual(Decimal(str(response.data['average_check'])), Decimal('0.00'))
+        self.assertEqual(response.data['revenue_appointments_count'], 0)
 
         self.assertEqual(response.data['status_counts'][0]['status'], 'Підтверджено')
         self.assertEqual(response.data['status_counts'][0]['total'], 1)
@@ -228,3 +238,126 @@ class ReadOnlyApiTests(APITestCase):
         self.assertEqual(response.data['status_counts'][0]['status'], 'Підтверджено')
         self.assertEqual(response.data['status_counts'][0]['total'], 1)
         self.assertEqual(response.data['employee_workload'][0]['employee_username'], self.employee.username)
+
+    def test_dashboard_endpoint_returns_revenue_for_completed_paid_appointments_only(self):
+        Appointment.objects.create(
+            client=self.client_entity,
+            service=self.service,
+            employee=self.employee,
+            created_by=self.user,
+            organization=self.organization,
+            appointment_date=date(2026, 5, 1),
+            start_time=time(9, 0),
+            end_time=time(10, 0),
+            status=AppointmentStatus.COMPLETED,
+            actual_price='100.00',
+        )
+        Appointment.objects.create(
+            client=self.client_entity,
+            service=self.service,
+            employee=self.employee,
+            created_by=self.user,
+            organization=self.organization,
+            appointment_date=date(2026, 5, 2),
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            status=AppointmentStatus.COMPLETED,
+            actual_price='200.00',
+        )
+        Appointment.objects.create(
+            client=self.client_entity,
+            service=self.service,
+            employee=self.employee,
+            created_by=self.user,
+            organization=self.organization,
+            appointment_date=date(2026, 5, 3),
+            start_time=time(11, 0),
+            end_time=time(12, 0),
+            status=AppointmentStatus.COMPLETED,
+            actual_price=None,
+        )
+        Appointment.objects.create(
+            client=self.client_entity,
+            service=self.service,
+            employee=self.employee,
+            created_by=self.user,
+            organization=self.organization,
+            appointment_date=date(2026, 5, 4),
+            start_time=time(12, 0),
+            end_time=time(13, 0),
+            status=AppointmentStatus.CANCELLED,
+            actual_price='500.00',
+        )
+        Appointment.objects.create(
+            client=self.client_entity,
+            service=self.service,
+            employee=self.employee,
+            created_by=self.user,
+            organization=self.organization,
+            appointment_date=date(2026, 5, 5),
+            start_time=time(13, 0),
+            end_time=time(14, 0),
+            status=AppointmentStatus.PLANNED,
+            actual_price='700.00',
+        )
+        Appointment.objects.create(
+            client=self.other_client,
+            service=self.other_service,
+            employee=self.other_employee,
+            created_by=self.other_employee,
+            organization=self.other_organization,
+            appointment_date=date(2026, 5, 6),
+            start_time=time(14, 0),
+            end_time=time(15, 0),
+            status=AppointmentStatus.COMPLETED,
+            actual_price='900.00',
+        )
+
+        response = self.client.get('/api/dashboard/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Decimal(str(response.data['total_revenue'])), Decimal('300.00'))
+        self.assertEqual(Decimal(str(response.data['average_check'])), Decimal('150.00'))
+        self.assertEqual(response.data['revenue_appointments_count'], 2)
+
+    def test_employee_dashboard_revenue_uses_only_own_completed_paid_appointments(self):
+        user_model = get_user_model()
+        colleague = user_model.objects.create_user(
+            username='employee_4',
+            password='testpass123',
+            role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
+        Appointment.objects.create(
+            client=self.client_entity,
+            service=self.service,
+            employee=self.employee,
+            created_by=self.user,
+            organization=self.organization,
+            appointment_date=date(2026, 5, 7),
+            start_time=time(9, 0),
+            end_time=time(10, 0),
+            status=AppointmentStatus.COMPLETED,
+            actual_price='75.00',
+        )
+        Appointment.objects.create(
+            client=self.client_entity,
+            service=self.service,
+            employee=colleague,
+            created_by=self.user,
+            organization=self.organization,
+            appointment_date=date(2026, 5, 8),
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            status=AppointmentStatus.COMPLETED,
+            actual_price='300.00',
+        )
+
+        self.client.force_authenticate(user=self.employee)
+        response = self.client.get('/api/dashboard/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['appointments_count'], 2)
+        self.assertEqual(Decimal(str(response.data['total_revenue'])), Decimal('75.00'))
+        self.assertEqual(Decimal(str(response.data['average_check'])), Decimal('75.00'))
+        self.assertEqual(response.data['revenue_appointments_count'], 1)

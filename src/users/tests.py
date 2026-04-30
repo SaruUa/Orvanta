@@ -564,3 +564,16 @@ class UserListPaginationTests(TestCase):
         self.assertTrue(
             all(user.organization == self.organization for user in second_page.context['page_obj'])
         )
+
+    def test_user_create_button_is_below_page_title_for_admin(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse('user_list'))
+        html = response.content.decode()
+
+        title_index = html.index('Користувачі системи')
+        create_button_index = html.index('Створити користувача')
+        filter_index = html.index('Пошук і фільтрація')
+
+        self.assertLess(title_index, create_button_index)
+        self.assertLess(create_button_index, filter_index)

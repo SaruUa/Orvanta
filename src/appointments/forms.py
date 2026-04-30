@@ -17,9 +17,16 @@ class AppointmentForm(forms.ModelForm):
             'appointment_date',
             'start_time',
             'end_time',
+            'actual_price',
             'status',
             'comment',
         ]
+        labels = {
+            'actual_price': 'Фактична вартість',
+        }
+        help_texts = {
+            'actual_price': 'Може відрізнятися від базової вартості послуги.',
+        }
         widgets = {
             'appointment_date': forms.DateInput(attrs={'type': 'date'}),
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
@@ -96,6 +103,25 @@ class AppointmentForm(forms.ModelForm):
                 )
 
         return cleaned_data
+
+
+class AppointmentActualPriceForm(forms.ModelForm):
+    class Meta:
+        model = Appointment
+        fields = ['actual_price']
+        labels = {
+            'actual_price': 'Фактична вартість',
+        }
+        widgets = {
+            'actual_price': forms.NumberInput(
+                attrs={
+                    'class': 'form-control form-control-sm',
+                    'min': '0',
+                    'step': '0.01',
+                    'placeholder': '0.00',
+                },
+            ),
+        }
 
 
 class AppointmentFilterForm(forms.Form):

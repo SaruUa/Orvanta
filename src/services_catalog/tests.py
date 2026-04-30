@@ -76,7 +76,10 @@ class ServiceListPaginationTests(TestCase):
                 'attachment; filename="services_export_',
             )
         )
-        self.assertIn('ID;Назва;Категорія;Опис;Вартість;Тривалість, хв;Активна', csv_text)
+        self.assertIn(
+            'ID;Назва;Категорія;Опис;Базова вартість;Тривалість, хв;Активна',
+            csv_text,
+        )
         self.assertIn('Українська послуга', csv_text)
         self.assertNotIn('Чужа послуга', csv_text)
 

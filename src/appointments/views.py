@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from config.csv_export import (
@@ -13,7 +14,7 @@ from config.csv_export import (
 from users.decorators import employee_manager_admin_required, manager_or_admin_required
 from users.models import UserRole
 
-from .forms import AppointmentFilterForm, AppointmentForm
+from .forms import AppointmentActualPriceForm, AppointmentFilterForm, AppointmentForm
 from .models import Appointment, AppointmentStatus, AppointmentStatusHistory
 
 APPOINTMENTS_PAGE_SIZE = 10
@@ -61,6 +62,19 @@ def _employee_display(employee):
     return employee.get_full_name() or employee.username
 
 
+def _redirect_back_to_appointments(request):
+    next_url = request.POST.get('next')
+
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(next_url)
+
+    return redirect('appointment_list')
+
+
 @employee_manager_admin_required
 def appointment_list_view(request):
     appointments, filter_form = _filtered_appointments_queryset(request.user, request.GET)
@@ -91,6 +105,8 @@ def appointment_export_csv_view(request):
         'ID',
         'Клієнт',
         'Послуга',
+        'Базова вартість послуги',
+        'Фактична вартість запису',
         'Співробітник',
         'Дата',
         'Час початку',
@@ -105,6 +121,8 @@ def appointment_export_csv_view(request):
             appointment.pk,
             appointment.client.full_name,
             appointment.service.name,
+            appointment.service.price,
+            appointment.actual_price if appointment.actual_price is not None else '',
             _employee_display(appointment.employee),
             format_csv_date(appointment.appointment_date),
             format_csv_time(appointment.start_time),
@@ -118,6 +136,26 @@ def appointment_export_csv_view(request):
     )
 
     return build_csv_response(filename, headers, rows)
+
+
+@manager_or_admin_required
+@require_POST
+def appointment_actual_price_update_view(request, pk):
+    appointment = get_object_or_404(
+        Appointment,
+        pk=pk,
+        organization=request.user.organization,
+    )
+    form = AppointmentActualPriceForm(request.POST, instance=appointment)
+
+    if form.is_valid():
+        appointment = form.save(commit=False)
+        appointment.save(update_fields=['actual_price', 'updated_at'])
+        messages.success(request, 'Фактичну вартість запису оновлено.')
+    else:
+        messages.error(request, 'Перевірте фактичну вартість запису.')
+
+    return _redirect_back_to_appointments(request)
 
 
 @manager_or_admin_required

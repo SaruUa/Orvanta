@@ -53,6 +53,36 @@
     </div>
 </div>
 
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5>Дохід</h5>
+                <p class="display-6 mb-1">{{ total_revenue|floatformat:2 }}</p>
+                <small class="text-muted">Виконані записи з фактичною вартістю</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5>Середній чек</h5>
+                <p class="display-6 mb-1">{{ average_check|floatformat:2 }}</p>
+                <small class="text-muted">За виконаними записами з оплатою</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <h5>Записів з оплатою</h5>
+                <p class="display-6 mb-1">{{ revenue_appointments_count }}</p>
+                <small class="text-muted">Враховано в доході</small>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="card h-100">

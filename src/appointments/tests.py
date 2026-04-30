@@ -1,4 +1,5 @@
 from datetime import date, time, timedelta
+from decimal import Decimal
 
 from django.test import TestCase
 from django.urls import reverse
@@ -96,6 +97,7 @@ class AppointmentFormConflictValidationTests(TestCase):
         start_time='10:00',
         end_time='11:00',
         status=AppointmentStatus.PLANNED,
+        actual_price=None,
     ):
         return Appointment.objects.create(
             client=client,
@@ -107,6 +109,7 @@ class AppointmentFormConflictValidationTests(TestCase):
             start_time=start_time,
             end_time=end_time,
             status=status,
+            actual_price=actual_price,
         )
 
     def _form_data(
@@ -119,8 +122,9 @@ class AppointmentFormConflictValidationTests(TestCase):
         start_time='10:00',
         end_time='11:00',
         status=AppointmentStatus.PLANNED,
+        actual_price=None,
     ):
-        return {
+        data = {
             'client': (client or self.client).pk,
             'service': (service or self.service).pk,
             'employee': (employee or self.employee).pk,
@@ -130,6 +134,9 @@ class AppointmentFormConflictValidationTests(TestCase):
             'status': status,
             'comment': '',
         }
+        if actual_price is not None:
+            data['actual_price'] = actual_price
+        return data
 
     def test_can_create_appointment_when_time_does_not_overlap(self):
         self._create_appointment(
@@ -281,6 +288,48 @@ class AppointmentFormConflictValidationTests(TestCase):
             form.non_field_errors(),
         )
 
+    def test_actual_price_can_be_saved_when_creating_appointment(self):
+        form = AppointmentForm(
+            data=self._form_data(actual_price='1250.50'),
+            organization=self.organization,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        appointment = form.save(commit=False)
+        appointment.organization = self.organization
+        appointment.created_by = self.manager
+        appointment.save()
+
+        self.assertEqual(appointment.actual_price, Decimal('1250.50'))
+
+    def test_actual_price_can_be_updated_on_existing_appointment(self):
+        appointment = self._create_appointment(
+            organization=self.organization,
+            client=self.client,
+            service=self.service,
+            employee=self.employee,
+            actual_price=Decimal('1000.00'),
+        )
+
+        form = AppointmentForm(
+            data=self._form_data(actual_price='1350.00'),
+            instance=appointment,
+            organization=self.organization,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        updated_appointment = form.save()
+        self.assertEqual(updated_appointment.actual_price, Decimal('1350.00'))
+
+    def test_negative_actual_price_is_invalid(self):
+        form = AppointmentForm(
+            data=self._form_data(actual_price='-1.00'),
+            organization=self.organization,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('actual_price', form.errors)
+
 
 class AppointmentListPaginationTests(TestCase):
     def setUp(self):
@@ -388,6 +437,7 @@ class AppointmentListPaginationTests(TestCase):
         end_time=time(10, 0),
         status=AppointmentStatus.PLANNED,
         comment='',
+        actual_price=None,
     ):
         organization = organization or self.organization
         client = self.client_record
@@ -409,6 +459,7 @@ class AppointmentListPaginationTests(TestCase):
             end_time=end_time,
             status=status,
             comment=comment,
+            actual_price=actual_price,
             organization=organization,
         )
 
@@ -459,7 +510,11 @@ class AppointmentListPaginationTests(TestCase):
                 'attachment; filename="appointments_export_',
             )
         )
-        self.assertIn('ID;Клієнт;Послуга;Співробітник;Дата;Час початку;Час завершення', csv_text)
+        self.assertIn(
+            'ID;Клієнт;Послуга;Базова вартість послуги;Фактична вартість запису;'
+            'Співробітник;Дата;Час початку;Час завершення',
+            csv_text,
+        )
         self.assertIn('Organization appointment', csv_text)
         self.assertIn('Appointment Client', csv_text)
         self.assertNotIn('External organization appointment', csv_text)
@@ -535,3 +590,96 @@ class AppointmentListPaginationTests(TestCase):
         self.assertIn('Selected date appointment', csv_text)
         self.assertIn('2026-05-10', csv_text)
         self.assertNotIn('Other date appointment', csv_text)
+
+    def test_appointment_export_includes_base_and_actual_prices(self):
+        self._create_appointment(
+            status=AppointmentStatus.COMPLETED,
+            comment='Paid export appointment',
+            actual_price=Decimal('175.25'),
+        )
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse('appointment_export_csv'))
+        csv_text = self._csv_text(response)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Базова вартість послуги', csv_text)
+        self.assertIn('Фактична вартість запису', csv_text)
+        self.assertIn('100.00', csv_text)
+        self.assertIn('175.25', csv_text)
+        self.assertIn('Paid export appointment', csv_text)
+
+    def test_quick_completed_status_does_not_require_actual_price(self):
+        appointment = self._create_appointment(status=AppointmentStatus.PLANNED)
+        self.client.force_login(self.employee)
+
+        response = self.client.post(
+            reverse(
+                'appointment_quick_status_update',
+                args=[appointment.pk, AppointmentStatus.COMPLETED],
+            ),
+        )
+
+        appointment.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(appointment.status, AppointmentStatus.COMPLETED)
+        self.assertIsNone(appointment.actual_price)
+
+    def test_manager_can_update_actual_price_from_appointment_list(self):
+        appointment = self._create_appointment(actual_price=None)
+        self.client.force_login(self.manager)
+        next_url = f"{reverse('appointment_list')}?status={AppointmentStatus.PLANNED}&page=2"
+
+        response = self.client.post(
+            reverse('appointment_actual_price_update', args=[appointment.pk]),
+            {
+                'actual_price': '185.50',
+                'next': next_url,
+            },
+        )
+
+        appointment.refresh_from_db()
+        self.assertRedirects(response, next_url, fetch_redirect_response=False)
+        self.assertEqual(appointment.actual_price, Decimal('185.50'))
+
+    def test_manager_can_clear_actual_price_from_appointment_list(self):
+        appointment = self._create_appointment(actual_price=Decimal('185.50'))
+        self.client.force_login(self.manager)
+
+        response = self.client.post(
+            reverse('appointment_actual_price_update', args=[appointment.pk]),
+            {'actual_price': ''},
+        )
+
+        appointment.refresh_from_db()
+        self.assertRedirects(response, reverse('appointment_list'))
+        self.assertIsNone(appointment.actual_price)
+
+    def test_negative_inline_actual_price_is_not_saved(self):
+        appointment = self._create_appointment(actual_price=Decimal('185.50'))
+        self.client.force_login(self.manager)
+
+        response = self.client.post(
+            reverse('appointment_actual_price_update', args=[appointment.pk]),
+            {'actual_price': '-1.00'},
+        )
+
+        appointment.refresh_from_db()
+        self.assertRedirects(response, reverse('appointment_list'))
+        self.assertEqual(appointment.actual_price, Decimal('185.50'))
+
+    def test_employee_cannot_update_actual_price_from_direct_post(self):
+        appointment = self._create_appointment(
+            employee=self.employee,
+            actual_price=Decimal('185.50'),
+        )
+        self.client.force_login(self.employee)
+
+        response = self.client.post(
+            reverse('appointment_actual_price_update', args=[appointment.pk]),
+            {'actual_price': '300.00'},
+        )
+
+        appointment.refresh_from_db()
+        self.assertRedirects(response, reverse('home'))
+        self.assertEqual(appointment.actual_price, Decimal('185.50'))

@@ -56,6 +56,9 @@ class DashboardAnalyticsApiView(APIView):
                 'employees_count': analytics['employees_count'],
                 'completed_count': analytics['completed_count'],
                 'cancelled_count': analytics['cancelled_count'],
+                'total_revenue': analytics['total_revenue'],
+                'average_check': analytics['average_check'],
+                'revenue_appointments_count': analytics['revenue_appointments_count'],
                 'status_counts': analytics['status_counts'],
                 'popular_services': [
                     {

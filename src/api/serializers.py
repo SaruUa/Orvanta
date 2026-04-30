@@ -69,6 +69,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             'appointment_date',
             'start_time',
             'end_time',
+            'actual_price',
             'comment',
             'created_at',
             'updated_at',

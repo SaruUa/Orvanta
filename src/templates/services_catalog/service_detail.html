@@ -14,7 +14,7 @@
     <li class="list-group-item"><strong>Назва:</strong> {{ service.name }}</li>
     <li class="list-group-item"><strong>Категорія:</strong> {{ service.category|default:'—' }}</li>
     <li class="list-group-item"><strong>Опис:</strong> {{ service.description|default:'—' }}</li>
-    <li class="list-group-item"><strong>Ціна:</strong> {{ service.price }}</li>
+    <li class="list-group-item"><strong>Базова вартість:</strong> {{ service.price }}</li>
     <li class="list-group-item"><strong>Тривалість:</strong> {{ service.duration_minutes }} хв</li>
     <li class="list-group-item"><strong>Активна:</strong> {{ service.is_active|yesno:'Так,Ні' }}</li>
     <li class="list-group-item"><strong>Створено:</strong> {{ service.created_at }}</li>

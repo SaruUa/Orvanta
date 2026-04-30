@@ -16,6 +16,9 @@ class ServiceForm(forms.ModelForm):
     class Meta:
         model = Service
         fields = ['category', 'name', 'description', 'price', 'duration_minutes', 'is_active']
+        labels = {
+            'price': 'Базова вартість',
+        }
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
         }

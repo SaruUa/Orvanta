@@ -1,14 +1,15 @@
 from datetime import date, time
+from decimal import Decimal
 
 from django.test import TestCase
 from django.urls import reverse
 
-from appointments.models import Appointment
+from appointments.models import Appointment, AppointmentStatus
 from clients.models import Client
 from services_catalog.models import Service, ServiceCategory
 from users.models import Organization, User, UserRole
 
-from .views import get_onboarding_status
+from .views import get_dashboard_analytics, get_onboarding_status
 
 
 class OnboardingStatusTests(TestCase):
@@ -207,3 +208,147 @@ class OnboardingStatusTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.context['onboarding'])
         self.assertNotContains(response, 'Початкове налаштування організації')
+
+
+class DashboardRevenueAnalyticsTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(
+            name='Revenue Org',
+            slug='revenue-org',
+        )
+        self.other_organization = Organization.objects.create(
+            name='Other Revenue Org',
+            slug='other-revenue-org',
+        )
+        self.admin = User.objects.create_user(
+            username='revenue_admin',
+            email='revenue_admin@example.com',
+            password='StrongPass123!',
+            role=UserRole.ADMIN,
+            organization=self.organization,
+        )
+        self.employee = User.objects.create_user(
+            username='revenue_employee',
+            email='revenue_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
+        self.other_employee = User.objects.create_user(
+            username='other_revenue_employee',
+            email='other_revenue_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.other_organization,
+        )
+        self.client_record = Client.objects.create(
+            full_name='Revenue Client',
+            phone='+380501230001',
+            organization=self.organization,
+            created_by=self.admin,
+        )
+        self.other_client_record = Client.objects.create(
+            full_name='Other Revenue Client',
+            phone='+380501230002',
+            organization=self.other_organization,
+            created_by=self.other_employee,
+        )
+        self.category = ServiceCategory.objects.create(
+            name='Revenue Category',
+            organization=self.organization,
+        )
+        self.other_category = ServiceCategory.objects.create(
+            name='Other Revenue Category',
+            organization=self.other_organization,
+        )
+        self.service = Service.objects.create(
+            category=self.category,
+            name='Revenue Service',
+            price='100.00',
+            duration_minutes=60,
+            organization=self.organization,
+        )
+        self.other_service = Service.objects.create(
+            category=self.other_category,
+            name='Other Revenue Service',
+            price='100.00',
+            duration_minutes=60,
+            organization=self.other_organization,
+        )
+
+    def _create_appointment(
+        self,
+        *,
+        organization=None,
+        employee=None,
+        status=AppointmentStatus.COMPLETED,
+        actual_price=None,
+        day=1,
+    ):
+        organization = organization or self.organization
+        client = self.client_record
+        service = self.service
+        created_by = self.admin
+
+        if organization != self.organization:
+            client = self.other_client_record
+            service = self.other_service
+            created_by = self.other_employee
+            employee = employee or self.other_employee
+        else:
+            employee = employee or self.employee
+
+        return Appointment.objects.create(
+            client=client,
+            service=service,
+            employee=employee,
+            created_by=created_by,
+            appointment_date=date(2026, 6, day),
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            status=status,
+            actual_price=actual_price,
+            organization=organization,
+        )
+
+    def test_dashboard_revenue_counts_completed_paid_appointments_only(self):
+        self._create_appointment(actual_price='100.00', day=1)
+        self._create_appointment(actual_price='250.00', day=2)
+        self._create_appointment(actual_price=None, day=3)
+        self._create_appointment(
+            status=AppointmentStatus.CANCELLED,
+            actual_price='900.00',
+            day=4,
+        )
+        self._create_appointment(
+            status=AppointmentStatus.PLANNED,
+            actual_price='800.00',
+            day=5,
+        )
+        self._create_appointment(
+            status=AppointmentStatus.CONFIRMED,
+            actual_price='700.00',
+            day=6,
+        )
+        self._create_appointment(
+            organization=self.other_organization,
+            employee=self.other_employee,
+            actual_price='1000.00',
+            day=7,
+        )
+
+        analytics = get_dashboard_analytics(self.admin)
+
+        self.assertEqual(analytics['total_revenue'], Decimal('350.00'))
+        self.assertEqual(analytics['average_check'], Decimal('175.00'))
+        self.assertEqual(analytics['revenue_appointments_count'], 2)
+
+    def test_dashboard_revenue_defaults_to_zero_without_completed_paid_appointments(self):
+        self._create_appointment(status=AppointmentStatus.COMPLETED, actual_price=None)
+        self._create_appointment(status=AppointmentStatus.CANCELLED, actual_price='100.00')
+
+        analytics = get_dashboard_analytics(self.admin)
+
+        self.assertEqual(analytics['total_revenue'], Decimal('0.00'))
+        self.assertEqual(analytics['average_check'], Decimal('0.00'))
+        self.assertEqual(analytics['revenue_appointments_count'], 0)

@@ -1,5 +1,7 @@
+from decimal import Decimal
+
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count
+from django.db.models import Avg, Count, Sum
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -122,6 +124,20 @@ def get_dashboard_analytics(user):
 
     completed_count = appointments.filter(status=AppointmentStatus.COMPLETED).count()
     cancelled_count = appointments.filter(status=AppointmentStatus.CANCELLED).count()
+    revenue_appointments = appointments.filter(
+        status=AppointmentStatus.COMPLETED,
+        actual_price__isnull=False,
+    )
+    revenue_totals = revenue_appointments.aggregate(
+        total_revenue=Sum('actual_price'),
+        average_check=Avg('actual_price'),
+    )
+    total_revenue = (revenue_totals['total_revenue'] or Decimal('0.00')).quantize(
+        Decimal('0.01'),
+    )
+    average_check = (revenue_totals['average_check'] or Decimal('0.00')).quantize(
+        Decimal('0.01'),
+    )
 
     clients = Client.objects.filter(organization=user_organization)
     services = Service.objects.filter(organization=user_organization)
@@ -139,6 +155,9 @@ def get_dashboard_analytics(user):
         ).count(),
         'completed_count': completed_count,
         'cancelled_count': cancelled_count,
+        'total_revenue': total_revenue,
+        'average_check': average_check,
+        'revenue_appointments_count': revenue_appointments.count(),
         'status_counts': status_counts,
         'popular_services': popular_services,
         'employee_workload': employee_workload,
