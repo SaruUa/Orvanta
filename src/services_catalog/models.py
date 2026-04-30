@@ -18,6 +18,9 @@ class ServiceCategory(models.Model):
         ordering = ['name']
         verbose_name = 'Категорія послуг'
         verbose_name_plural = 'Категорії послуг'
+        indexes = [
+            models.Index(fields=['organization', 'name'], name='svc_cat_org_name_idx'),
+        ]
 
     def __str__(self):
         return self.name
@@ -50,6 +53,11 @@ class Service(models.Model):
         ordering = ['name']
         verbose_name = 'Послуга'
         verbose_name_plural = 'Послуги'
+        indexes = [
+            models.Index(fields=['organization', 'is_active'], name='svc_org_active_idx'),
+            models.Index(fields=['organization', 'category'], name='svc_org_category_idx'),
+            models.Index(fields=['organization', 'name'], name='svc_org_name_idx'),
+        ]
         constraints = [
             models.UniqueConstraint(fields=['category', 'name'], name='unique_service_per_category')
         ]

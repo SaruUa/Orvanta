@@ -32,6 +32,10 @@ class Client(models.Model):
         ordering = ['full_name']
         verbose_name = 'Клієнт'
         verbose_name_plural = 'Клієнти'
+        indexes = [
+            models.Index(fields=['organization', 'is_active'], name='client_org_active_idx'),
+            models.Index(fields=['organization', 'full_name'], name='client_org_name_idx'),
+        ]
 
     def __str__(self):
         return self.full_name

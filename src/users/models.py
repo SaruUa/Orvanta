@@ -41,6 +41,12 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'Користувач'
         verbose_name_plural = 'Користувачі'
+        indexes = [
+            models.Index(fields=['organization', 'role'], name='user_org_role_idx'),
+            models.Index(fields=['organization', 'is_active'], name='user_org_active_idx'),
+            models.Index(fields=['organization', 'username'], name='user_org_name_idx'),
+            models.Index(fields=['organization', '-date_joined'], name='user_org_joined_idx'),
+        ]
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"

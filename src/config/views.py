@@ -1,13 +1,84 @@
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.shortcuts import render
+from django.urls import reverse
 
 from appointments.models import Appointment, AppointmentStatus, AppointmentStatusHistory
 from audit.models import AuditLog
 from clients.models import Client
-from services_catalog.models import Service
+from services_catalog.models import Service, ServiceCategory
 from users.decorators import admin_required
 from users.models import User, UserRole
+
+
+def get_onboarding_status(user):
+    organization = getattr(user, 'organization', None)
+
+    if user.role != UserRole.ADMIN or organization is None:
+        return None
+
+    has_service_category = ServiceCategory.objects.filter(
+        organization=organization,
+    ).exists()
+    has_service = Service.objects.filter(
+        organization=organization,
+        is_active=True,
+    ).exists()
+    has_employee = User.objects.filter(
+        organization=organization,
+        role=UserRole.EMPLOYEE,
+        is_active=True,
+    ).exists()
+    has_client = Client.objects.filter(
+        organization=organization,
+        is_active=True,
+    ).exists()
+    has_appointment = Appointment.objects.filter(
+        organization=organization,
+    ).exists()
+
+    steps = [
+        {
+            'key': 'service_category',
+            'label': 'Створіть першу категорію послуг',
+            'is_done': has_service_category,
+            'url': reverse('category_create'),
+            'action_label': 'Створити категорію',
+        },
+        {
+            'key': 'service',
+            'label': 'Створіть першу послугу',
+            'is_done': has_service,
+            'url': reverse('service_create'),
+            'action_label': 'Створити послугу',
+        },
+        {
+            'key': 'employee',
+            'label': 'Додайте співробітника',
+            'is_done': has_employee,
+            'url': reverse('user_create'),
+            'action_label': 'Додати співробітника',
+        },
+        {
+            'key': 'client',
+            'label': 'Додайте клієнта',
+            'is_done': has_client,
+            'url': reverse('client_create'),
+            'action_label': 'Додати клієнта',
+        },
+        {
+            'key': 'appointment',
+            'label': 'Створіть перший запис',
+            'is_done': has_appointment,
+            'url': reverse('appointment_create'),
+            'action_label': 'Створити запис',
+        },
+    ]
+
+    return {
+        'steps': steps,
+        'is_complete': all(step['is_done'] for step in steps),
+    }
 
 
 def get_dashboard_analytics(user):
@@ -78,6 +149,7 @@ def get_dashboard_analytics(user):
 def home_view(request):
     analytics = get_dashboard_analytics(request.user)
     appointments = analytics.pop('appointments_queryset')
+    onboarding = get_onboarding_status(request.user)
 
     nearest_appointments = appointments.order_by('appointment_date', 'start_time')[:5]
 
@@ -88,6 +160,7 @@ def home_view(request):
 
     context = {
         **analytics,
+        'onboarding': onboarding,
         'nearest_appointments': nearest_appointments,
         'recent_status_changes': recent_status_changes,
     }

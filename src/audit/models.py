@@ -48,6 +48,18 @@ class AuditLog(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Запис аудиту'
         verbose_name_plural = 'Журнал аудиту'
+        indexes = [
+            models.Index(fields=['organization', '-created_at'], name='audit_org_created_idx'),
+            models.Index(fields=['organization', 'user', '-created_at'], name='audit_org_user_idx'),
+            models.Index(
+                fields=['organization', 'action_type', '-created_at'],
+                name='audit_org_action_idx',
+            ),
+            models.Index(
+                fields=['organization', 'entity_type', '-created_at'],
+                name='audit_org_entity_idx',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.action_type} - {self.entity_type} - {self.created_at:%Y-%m-%d %H:%M:%S}'

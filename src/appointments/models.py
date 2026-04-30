@@ -51,6 +51,24 @@ class Appointment(models.Model):
         ordering = ['-appointment_date', '-start_time']
         verbose_name = 'Запис'
         verbose_name_plural = 'Записи'
+        indexes = [
+            models.Index(
+                fields=['organization', 'appointment_date', 'start_time'],
+                name='appt_org_date_start_idx',
+            ),
+            models.Index(fields=['organization', 'status'], name='appt_org_status_idx'),
+            models.Index(
+                fields=[
+                    'organization',
+                    'employee',
+                    'appointment_date',
+                    'start_time',
+                    'end_time',
+                ],
+                name='appt_org_emp_date_time_idx',
+            ),
+            models.Index(fields=['organization', 'service'], name='appt_org_service_idx'),
+        ]
 
     def __str__(self):
         return f'{self.client.full_name} - {self.service.name} ({self.appointment_date})'
@@ -85,6 +103,16 @@ class AppointmentStatusHistory(models.Model):
         ordering = ['-changed_at']
         verbose_name = 'Історія статусу запису'
         verbose_name_plural = 'Історія статусів записів'
+        indexes = [
+            models.Index(
+                fields=['organization', '-changed_at'],
+                name='appt_hist_org_changed_idx',
+            ),
+            models.Index(
+                fields=['organization', 'appointment', '-changed_at'],
+                name='appt_hist_org_appt_idx',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.appointment_id}: {self.old_status} -> {self.new_status}'

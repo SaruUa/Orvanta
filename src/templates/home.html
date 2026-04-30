@@ -10,6 +10,10 @@
     <p><strong>Роль:</strong> {{ request.user.get_role_display }}</p>
 </div>
 
+{% if onboarding and not onboarding.is_complete %}
+    {% include 'includes/onboarding.html' %}
+{% endif %}
+
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="card stats-card h-100">
