@@ -378,6 +378,43 @@ class AppointmentListPaginationTests(TestCase):
                 organization=organization,
             )
 
+    def _create_appointment(
+        self,
+        *,
+        employee=None,
+        organization=None,
+        appointment_date=date(2026, 5, 10),
+        start_time=time(9, 0),
+        end_time=time(10, 0),
+        status=AppointmentStatus.PLANNED,
+        comment='',
+    ):
+        organization = organization or self.organization
+        client = self.client_record
+        service = self.service
+        created_by = self.manager
+
+        if organization != self.organization:
+            client = self.external_client_record
+            service = self.external_service
+            created_by = self.external_employee
+
+        return Appointment.objects.create(
+            client=client,
+            service=service,
+            employee=employee or self.employee,
+            created_by=created_by,
+            appointment_date=appointment_date,
+            start_time=start_time,
+            end_time=end_time,
+            status=status,
+            comment=comment,
+            organization=organization,
+        )
+
+    def _csv_text(self, response):
+        return response.content.decode('utf-8-sig')
+
     def test_employee_appointment_list_is_paginated_and_limited_to_own_records(self):
         self._create_appointments(12, employee=self.employee)
         self._create_appointments(12, employee=self.other_employee, start_index=30)
@@ -402,3 +439,99 @@ class AppointmentListPaginationTests(TestCase):
         self.assertTrue(
             all(appointment.employee == self.employee for appointment in second_page.context['page_obj'])
         )
+
+    def test_manager_exports_appointments_for_current_organization_only(self):
+        self._create_appointment(comment='Organization appointment')
+        self._create_appointment(
+            employee=self.external_employee,
+            organization=self.other_organization,
+            comment='External organization appointment',
+        )
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse('appointment_export_csv'))
+        csv_text = self._csv_text(response)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv; charset=utf-8')
+        self.assertTrue(
+            response['Content-Disposition'].startswith(
+                'attachment; filename="appointments_export_',
+            )
+        )
+        self.assertIn('ID;Клієнт;Послуга;Співробітник;Дата;Час початку;Час завершення', csv_text)
+        self.assertIn('Organization appointment', csv_text)
+        self.assertIn('Appointment Client', csv_text)
+        self.assertNotIn('External organization appointment', csv_text)
+        self.assertNotIn('External Appointment Client', csv_text)
+
+    def test_employee_exports_only_own_appointments(self):
+        self._create_appointment(employee=self.employee, comment='Own employee appointment')
+        self._create_appointment(
+            employee=self.other_employee,
+            start_time=time(11, 0),
+            end_time=time(12, 0),
+            comment='Other employee appointment',
+        )
+        self._create_appointment(
+            employee=self.external_employee,
+            organization=self.other_organization,
+            start_time=time(13, 0),
+            end_time=time(14, 0),
+            comment='External employee appointment',
+        )
+        self.client.force_login(self.employee)
+
+        response = self.client.get(reverse('appointment_export_csv'))
+        csv_text = self._csv_text(response)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Own employee appointment', csv_text)
+        self.assertNotIn('Other employee appointment', csv_text)
+        self.assertNotIn('External employee appointment', csv_text)
+
+    def test_appointment_export_respects_status_filter(self):
+        self._create_appointment(
+            status=AppointmentStatus.CANCELLED,
+            comment='Cancelled export appointment',
+        )
+        self._create_appointment(
+            status=AppointmentStatus.COMPLETED,
+            start_time=time(11, 0),
+            end_time=time(12, 0),
+            comment='Completed export appointment',
+        )
+        self.client.force_login(self.manager)
+
+        response = self.client.get(
+            reverse('appointment_export_csv'),
+            {'status': AppointmentStatus.CANCELLED},
+        )
+        csv_text = self._csv_text(response)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Скасовано', csv_text)
+        self.assertIn('Cancelled export appointment', csv_text)
+        self.assertNotIn('Completed export appointment', csv_text)
+
+    def test_appointment_export_respects_appointment_date_filter(self):
+        self._create_appointment(
+            appointment_date=date(2026, 5, 10),
+            comment='Selected date appointment',
+        )
+        self._create_appointment(
+            appointment_date=date(2026, 5, 11),
+            comment='Other date appointment',
+        )
+        self.client.force_login(self.manager)
+
+        response = self.client.get(
+            reverse('appointment_export_csv'),
+            {'appointment_date': '2026-05-10'},
+        )
+        csv_text = self._csv_text(response)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Selected date appointment', csv_text)
+        self.assertIn('2026-05-10', csv_text)
+        self.assertNotIn('Other date appointment', csv_text)

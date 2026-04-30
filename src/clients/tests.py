@@ -78,3 +78,103 @@ class ClientListPaginationTests(TestCase):
         self.assertEqual(len(first_page_ids), 10)
         self.assertEqual(len(second_page_ids), 2)
         self.assertTrue(first_page_ids.isdisjoint(second_page_ids))
+
+
+class ClientExportCsvTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(name='CSV Client Org', slug='csv-client-org')
+        self.other_organization = Organization.objects.create(
+            name='Other CSV Client Org',
+            slug='other-csv-client-org',
+        )
+        self.user = User.objects.create_user(
+            username='csv_client_manager',
+            email='csv_client_manager@example.com',
+            password='StrongPass123!',
+            role=UserRole.MANAGER,
+            organization=self.organization,
+        )
+        self.other_user = User.objects.create_user(
+            username='csv_client_other_manager',
+            email='csv_client_other_manager@example.com',
+            password='StrongPass123!',
+            role=UserRole.MANAGER,
+            organization=self.other_organization,
+        )
+
+    def _csv_text(self, response):
+        return response.content.decode('utf-8-sig')
+
+    def test_authorized_user_gets_csv_for_current_organization_only(self):
+        Client.objects.create(
+            full_name='Іван Петренко',
+            phone='+380501100001',
+            email='ivan@example.com',
+            organization=self.organization,
+            created_by=self.user,
+        )
+        Client.objects.create(
+            full_name='Чужий Клієнт',
+            phone='+380501100002',
+            email='external@example.com',
+            organization=self.other_organization,
+            created_by=self.other_user,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse('client_export_csv'))
+        csv_text = self._csv_text(response)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv; charset=utf-8')
+        self.assertTrue(
+            response['Content-Disposition'].startswith(
+                'attachment; filename="clients_export_',
+            )
+        )
+        self.assertIn('ID;ПІБ;Телефон;Email;Активний;Дата створення;Дата оновлення', csv_text)
+        self.assertIn('Іван Петренко', csv_text)
+        self.assertIn('ivan@example.com', csv_text)
+        self.assertNotIn('Чужий Клієнт', csv_text)
+        self.assertNotIn('external@example.com', csv_text)
+
+    def test_client_export_respects_search_and_active_filters(self):
+        Client.objects.create(
+            full_name='Іван Активний',
+            phone='+380501100003',
+            is_active=True,
+            organization=self.organization,
+            created_by=self.user,
+        )
+        Client.objects.create(
+            full_name='Іван Неактивний',
+            phone='+380501100004',
+            is_active=False,
+            organization=self.organization,
+            created_by=self.user,
+        )
+        Client.objects.create(
+            full_name='Марія Активна',
+            phone='+380501100005',
+            is_active=True,
+            organization=self.organization,
+            created_by=self.user,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse('client_export_csv'),
+            {'query': 'Іван', 'is_active': 'true'},
+        )
+        csv_text = self._csv_text(response)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Іван Активний', csv_text)
+        self.assertNotIn('Іван Неактивний', csv_text)
+        self.assertNotIn('Марія Активна', csv_text)
+
+    def test_unauthenticated_user_cannot_export_clients(self):
+        response = self.client.get(reverse('client_export_csv'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertNotEqual(response.get('Content-Type'), 'text/csv; charset=utf-8')

@@ -5,9 +5,15 @@
 {% block content %}
 <h1 class="page-title">Список послуг</h1>
 
-<div class="mb-3 d-flex gap-2">
+<div class="mb-3 d-flex gap-2 flex-wrap">
     <a href="{% url 'service_create' %}" class="btn btn-primary">Додати послугу</a>
     <a href="{% url 'category_list' %}" class="btn btn-outline-secondary">Категорії послуг</a>
+    <a
+        href="{% url 'service_export_csv' %}{% if query_string %}?{{ query_string }}{% endif %}"
+        class="btn btn-outline-secondary"
+    >
+        Експорт CSV
+    </a>
 </div>
 
 <div class="card filter-card mb-4">

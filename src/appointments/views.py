@@ -1,10 +1,17 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from config.csv_export import (
+    build_csv_response,
+    format_csv_date,
+    format_csv_datetime,
+    format_csv_time,
+)
 from users.decorators import employee_manager_admin_required, manager_or_admin_required
+from users.models import UserRole
 
 from .forms import AppointmentFilterForm, AppointmentForm
 from .models import Appointment, AppointmentStatus, AppointmentStatusHistory
@@ -13,6 +20,8 @@ APPOINTMENTS_PAGE_SIZE = 10
 
 
 def _organization_appointments_queryset(user):
+    if user.organization_id is None:
+        return Appointment.objects.none()
     return Appointment.objects.select_related(
         'client',
         'service',
@@ -20,16 +29,15 @@ def _organization_appointments_queryset(user):
     ).filter(organization=user.organization)
 
 
-@employee_manager_admin_required
-def appointment_list_view(request):
-    appointments = _organization_appointments_queryset(request.user)
+def _filtered_appointments_queryset(user, data):
+    appointments = _organization_appointments_queryset(user)
 
-    if request.user.role == 'employee':
-        appointments = appointments.filter(employee=request.user)
+    if user.role == UserRole.EMPLOYEE:
+        appointments = appointments.filter(employee=user)
 
     filter_form = AppointmentFilterForm(
-        request.GET or None,
-        organization=request.user.organization,
+        data or None,
+        organization=user.organization,
     )
 
     if filter_form.is_valid():
@@ -45,6 +53,17 @@ def appointment_list_view(request):
 
         if employee:
             appointments = appointments.filter(employee=employee)
+
+    return appointments, filter_form
+
+
+def _employee_display(employee):
+    return employee.get_full_name() or employee.username
+
+
+@employee_manager_admin_required
+def appointment_list_view(request):
+    appointments, filter_form = _filtered_appointments_queryset(request.user, request.GET)
 
     query_params = request.GET.copy()
     query_params.pop('page', None)
@@ -62,6 +81,43 @@ def appointment_list_view(request):
             'query_string': query_params.urlencode(),
         },
     )
+
+
+@employee_manager_admin_required
+def appointment_export_csv_view(request):
+    appointments, _filter_form = _filtered_appointments_queryset(request.user, request.GET)
+    filename = f'appointments_export_{timezone.localdate():%Y%m%d}.csv'
+    headers = [
+        'ID',
+        'Клієнт',
+        'Послуга',
+        'Співробітник',
+        'Дата',
+        'Час початку',
+        'Час завершення',
+        'Статус',
+        'Коментар',
+        'Дата створення',
+        'Дата оновлення',
+    ]
+    rows = (
+        [
+            appointment.pk,
+            appointment.client.full_name,
+            appointment.service.name,
+            _employee_display(appointment.employee),
+            format_csv_date(appointment.appointment_date),
+            format_csv_time(appointment.start_time),
+            format_csv_time(appointment.end_time),
+            appointment.get_status_display(),
+            appointment.comment,
+            format_csv_datetime(appointment.created_at),
+            format_csv_datetime(appointment.updated_at),
+        ]
+        for appointment in appointments
+    )
+
+    return build_csv_response(filename, headers, rows)
 
 
 @manager_or_admin_required
@@ -160,7 +216,7 @@ def appointment_detail_view(request, pk):
         pk=pk,
     )
 
-    if request.user.role == 'employee' and appointment.employee != request.user:
+    if request.user.role == UserRole.EMPLOYEE and appointment.employee != request.user:
         messages.error(request, 'У вас немає прав доступу до цього запису.')
         return redirect('appointment_list')
 
@@ -187,7 +243,7 @@ def appointment_quick_status_update_view(request, pk, new_status):
         organization=request.user.organization,
     )
 
-    if request.user.role == 'employee' and appointment.employee != request.user:
+    if request.user.role == UserRole.EMPLOYEE and appointment.employee != request.user:
         messages.error(request, 'У вас немає прав для зміни цього запису.')
         return redirect('appointment_list')
 

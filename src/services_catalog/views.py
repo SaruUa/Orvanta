@@ -3,14 +3,58 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from config.csv_export import (
+    build_csv_response,
+    format_csv_bool,
+    format_csv_datetime,
+)
 from users.decorators import manager_or_admin_required
 
 from .forms import ServiceCategoryForm, ServiceFilterForm, ServiceForm
 from .models import Service, ServiceCategory
 
 SERVICES_PAGE_SIZE = 10
+
+
+def _organization_services_queryset(user):
+    if user.organization_id is None:
+        return Service.objects.none()
+    return Service.objects.select_related('category').filter(
+        organization=user.organization,
+    )
+
+
+def _filtered_services_queryset(user, data):
+    services = _organization_services_queryset(user)
+
+    filter_form = ServiceFilterForm(
+        data or None,
+        organization=user.organization,
+    )
+
+    if filter_form.is_valid():
+        query = filter_form.cleaned_data.get('query')
+        category = filter_form.cleaned_data.get('category')
+        is_active = filter_form.cleaned_data.get('is_active')
+
+        if query:
+            services = services.filter(
+                Q(name__icontains=query) |
+                Q(description__icontains=query)
+            )
+
+        if category:
+            services = services.filter(category=category)
+
+        if is_active == 'true':
+            services = services.filter(is_active=True)
+        elif is_active == 'false':
+            services = services.filter(is_active=False)
+
+    return services, filter_form
 
 
 @login_required
@@ -67,33 +111,7 @@ def category_update_view(request, pk):
 
 @login_required
 def service_list_view(request):
-    services = Service.objects.select_related('category').filter(
-        organization=request.user.organization,
-    )
-
-    filter_form = ServiceFilterForm(
-        request.GET or None,
-        organization=request.user.organization,
-    )
-
-    if filter_form.is_valid():
-        query = filter_form.cleaned_data.get('query')
-        category = filter_form.cleaned_data.get('category')
-        is_active = filter_form.cleaned_data.get('is_active')
-
-        if query:
-            services = services.filter(
-                Q(name__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        if category:
-            services = services.filter(category=category)
-
-        if is_active == 'true':
-            services = services.filter(is_active=True)
-        elif is_active == 'false':
-            services = services.filter(is_active=False)
+    services, filter_form = _filtered_services_queryset(request.user, request.GET)
 
     query_params = request.GET.copy()
     query_params.pop('page', None)
@@ -109,6 +127,39 @@ def service_list_view(request):
             'query_string': query_params.urlencode(),
         },
     )
+
+
+@login_required
+def service_export_csv_view(request):
+    services, _filter_form = _filtered_services_queryset(request.user, request.GET)
+    filename = f'services_export_{timezone.localdate():%Y%m%d}.csv'
+    headers = [
+        'ID',
+        'Назва',
+        'Категорія',
+        'Опис',
+        'Вартість',
+        'Тривалість, хв',
+        'Активна',
+        'Дата створення',
+        'Дата оновлення',
+    ]
+    rows = (
+        [
+            service.pk,
+            service.name,
+            service.category.name if service.category else '',
+            service.description,
+            service.price,
+            service.duration_minutes,
+            format_csv_bool(service.is_active),
+            format_csv_datetime(service.created_at),
+            format_csv_datetime(service.updated_at),
+        ]
+        for service in services
+    )
+
+    return build_csv_response(filename, headers, rows)
 
 
 @manager_or_admin_required
