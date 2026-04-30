@@ -42,7 +42,7 @@
     </div>
 </div>
 
-{% if logs %}
+{% if page_obj %}
     <div class="table-responsive">
         <table class="table table-bordered table-hover align-middle">
             <thead>
@@ -57,7 +57,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for log in logs %}
+                {% for log in page_obj %}
                     <tr>
                         <td>{{ log.user|default:'—' }}</td>
                         <td>{{ log.get_action_type_display }}</td>
@@ -71,6 +71,7 @@
             </tbody>
         </table>
     </div>
+    {% include 'includes/pagination.html' %}
 {% else %}
     <p>Записів журналу аудиту не знайдено.</p>
 {% endif %}

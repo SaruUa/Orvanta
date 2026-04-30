@@ -31,7 +31,7 @@
     </div>
 </div>
 
-{% if clients %}
+{% if page_obj %}
     <div class="table-responsive">
         <table class="table table-bordered table-hover align-middle">
             <thead>
@@ -44,7 +44,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for client in clients %}
+                {% for client in page_obj %}
                     <tr>
                         <td>{{ client.full_name }}</td>
                         <td>{{ client.phone }}</td>
@@ -68,6 +68,7 @@
             </tbody>
         </table>
     </div>
+    {% include 'includes/pagination.html' %}
 {% else %}
     <p>Клієнтів за вказаними критеріями не знайдено.</p>
 {% endif %}

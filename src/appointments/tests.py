@@ -1,4 +1,7 @@
+from datetime import date, time, timedelta
+
 from django.test import TestCase
+from django.urls import reverse
 
 from clients.models import Client
 from services_catalog.models import Service, ServiceCategory
@@ -276,4 +279,126 @@ class AppointmentFormConflictValidationTests(TestCase):
         self.assertIn(
             'Час завершення запису повинен бути пізнішим за час початку.',
             form.non_field_errors(),
+        )
+
+
+class AppointmentListPaginationTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(name='Appointment Org', slug='appointment-org')
+        self.other_organization = Organization.objects.create(
+            name='Other Appointment Org',
+            slug='other-appointment-org',
+        )
+
+        self.manager = User.objects.create_user(
+            username='appointment_manager',
+            email='appointment_manager@example.com',
+            password='StrongPass123!',
+            role=UserRole.MANAGER,
+            organization=self.organization,
+        )
+        self.employee = User.objects.create_user(
+            username='appointment_employee',
+            email='appointment_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
+        self.other_employee = User.objects.create_user(
+            username='appointment_other_employee',
+            email='appointment_other_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
+        self.external_employee = User.objects.create_user(
+            username='appointment_external_employee',
+            email='appointment_external_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.other_organization,
+        )
+
+        self.client_record = Client.objects.create(
+            full_name='Appointment Client',
+            phone='+380507000001',
+            organization=self.organization,
+            created_by=self.manager,
+        )
+        self.external_client_record = Client.objects.create(
+            full_name='External Appointment Client',
+            phone='+380507000002',
+            organization=self.other_organization,
+            created_by=self.external_employee,
+        )
+        self.category = ServiceCategory.objects.create(
+            name='Appointment Category',
+            organization=self.organization,
+        )
+        self.external_category = ServiceCategory.objects.create(
+            name='External Appointment Category',
+            organization=self.other_organization,
+        )
+        self.service = Service.objects.create(
+            category=self.category,
+            name='Appointment Service',
+            price='100.00',
+            duration_minutes=60,
+            organization=self.organization,
+        )
+        self.external_service = Service.objects.create(
+            category=self.external_category,
+            name='External Appointment Service',
+            price='100.00',
+            duration_minutes=60,
+            organization=self.other_organization,
+        )
+
+    def _create_appointments(self, count, *, employee, organization=None, start_index=0):
+        organization = organization or self.organization
+        client = self.client_record
+        service = self.service
+        created_by = self.manager
+
+        if organization != self.organization:
+            client = self.external_client_record
+            service = self.external_service
+            created_by = self.external_employee
+
+        for index in range(count):
+            Appointment.objects.create(
+                client=client,
+                service=service,
+                employee=employee,
+                created_by=created_by,
+                appointment_date=date(2026, 5, 1) + timedelta(days=start_index + index),
+                start_time=time(9, 0),
+                end_time=time(10, 0),
+                status=AppointmentStatus.PLANNED,
+                organization=organization,
+            )
+
+    def test_employee_appointment_list_is_paginated_and_limited_to_own_records(self):
+        self._create_appointments(12, employee=self.employee)
+        self._create_appointments(12, employee=self.other_employee, start_index=30)
+        self._create_appointments(
+            5,
+            employee=self.external_employee,
+            organization=self.other_organization,
+            start_index=60,
+        )
+        self.client.force_login(self.employee)
+
+        first_page = self.client.get(reverse('appointment_list'))
+        second_page = self.client.get(reverse('appointment_list'), {'page': '2'})
+
+        self.assertEqual(first_page.status_code, 200)
+        self.assertEqual(first_page.context['page_obj'].paginator.count, 12)
+        self.assertEqual(len(first_page.context['page_obj']), 10)
+        self.assertEqual(len(second_page.context['page_obj']), 2)
+        self.assertTrue(
+            all(appointment.employee == self.employee for appointment in first_page.context['page_obj'])
+        )
+        self.assertTrue(
+            all(appointment.employee == self.employee for appointment in second_page.context['page_obj'])
         )

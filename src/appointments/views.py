@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -7,6 +8,8 @@ from users.decorators import employee_manager_admin_required, manager_or_admin_r
 
 from .forms import AppointmentFilterForm, AppointmentForm
 from .models import Appointment, AppointmentStatus, AppointmentStatusHistory
+
+APPOINTMENTS_PAGE_SIZE = 10
 
 
 def _organization_appointments_queryset(user):
@@ -43,12 +46,20 @@ def appointment_list_view(request):
         if employee:
             appointments = appointments.filter(employee=employee)
 
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+    page_obj = Paginator(appointments, APPOINTMENTS_PAGE_SIZE).get_page(
+        request.GET.get('page'),
+    )
+
     return render(
         request,
         'appointments/appointment_list.html',
         {
-            'appointments': appointments,
+            'appointments': page_obj,
             'filter_form': filter_form,
+            'page_obj': page_obj,
+            'query_string': query_params.urlencode(),
         },
     )
 

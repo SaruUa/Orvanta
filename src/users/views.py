@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
@@ -18,6 +19,8 @@ from .forms import (
     UserRoleForm,
 )
 from .models import Organization, User, UserRole
+
+USERS_PAGE_SIZE = 10
 
 
 def _organization_users_queryset(user):
@@ -94,12 +97,18 @@ def user_list_view(request):
         elif is_active == 'false':
             users = users.filter(is_active=False)
 
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+    page_obj = Paginator(users, USERS_PAGE_SIZE).get_page(request.GET.get('page'))
+
     return render(
         request,
         'users/user_list.html',
         {
-            'users': users,
+            'users': page_obj,
             'filter_form': filter_form,
+            'page_obj': page_obj,
+            'query_string': query_params.urlencode(),
         },
     )
 

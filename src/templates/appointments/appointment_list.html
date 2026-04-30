@@ -36,7 +36,7 @@
     </div>
 </div>
 
-{% if appointments %}
+{% if page_obj %}
     <div class="table-responsive">
         <table class="table table-bordered table-hover align-middle">
             <thead>
@@ -52,7 +52,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for appointment in appointments %}
+                {% for appointment in page_obj %}
                     <tr>
                         <td>{{ appointment.client }}</td>
                         <td>{{ appointment.service }}</td>
@@ -117,6 +117,7 @@
             </tbody>
         </table>
     </div>
+    {% include 'includes/pagination.html' %}
 {% else %}
     <p>Записів за вибраними критеріями не знайдено.</p>
 {% endif %}

@@ -37,7 +37,7 @@
     </div>
 </div>
 
-{% if users %}
+{% if page_obj %}
     <div class="table-responsive">
         <table class="table table-bordered table-hover align-middle">
             <thead>
@@ -52,7 +52,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for user_obj in users %}
+                {% for user_obj in page_obj %}
                     <tr>
                         <td>{{ user_obj.username }}</td>
                         <td>{{ user_obj.email|default:'—' }}</td>
@@ -76,6 +76,7 @@
             </tbody>
         </table>
     </div>
+    {% include 'includes/pagination.html' %}
 {% else %}
     <p>Користувачів не знайдено.</p>
 {% endif %}

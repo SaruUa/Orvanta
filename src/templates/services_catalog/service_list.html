@@ -37,7 +37,7 @@
     </div>
 </div>
 
-{% if services %}
+{% if page_obj %}
     <div class="table-responsive">
         <table class="table table-bordered table-hover align-middle">
             <thead>
@@ -51,7 +51,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for service in services %}
+                {% for service in page_obj %}
                     <tr>
                         <td>{{ service.name }}</td>
                         <td>{{ service.category|default:'—' }}</td>
@@ -76,6 +76,7 @@
             </tbody>
         </table>
     </div>
+    {% include 'includes/pagination.html' %}
 {% else %}
     <p>Послуг за вказаними критеріями не знайдено.</p>
 {% endif %}

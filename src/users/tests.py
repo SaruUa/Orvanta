@@ -515,3 +515,52 @@ class NavigationUiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'href="/admin/"')
         self.assertNotContains(response, reverse('organization_settings'))
+
+
+class UserListPaginationTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(name='Users Org', slug='users-org')
+        self.other_organization = Organization.objects.create(
+            name='Other Users Org',
+            slug='other-users-org',
+        )
+        self.admin_user = User.objects.create_user(
+            username='users_admin',
+            email='users_admin@example.com',
+            password='StrongPass123!',
+            role=UserRole.ADMIN,
+            organization=self.organization,
+        )
+
+        for index in range(12):
+            User.objects.create_user(
+                username=f'users_employee_{index:02d}',
+                email=f'users_employee_{index:02d}@example.com',
+                password='StrongPass123!',
+                role=UserRole.EMPLOYEE,
+                organization=self.organization,
+            )
+            User.objects.create_user(
+                username=f'other_users_employee_{index:02d}',
+                email=f'other_users_employee_{index:02d}@example.com',
+                password='StrongPass123!',
+                role=UserRole.EMPLOYEE,
+                organization=self.other_organization,
+            )
+
+    def test_user_list_is_paginated_and_organization_scoped(self):
+        self.client.force_login(self.admin_user)
+
+        first_page = self.client.get(reverse('user_list'))
+        second_page = self.client.get(reverse('user_list'), {'page': '2'})
+
+        self.assertEqual(first_page.status_code, 200)
+        self.assertEqual(first_page.context['page_obj'].paginator.count, 13)
+        self.assertEqual(len(first_page.context['page_obj']), 10)
+        self.assertEqual(len(second_page.context['page_obj']), 3)
+        self.assertTrue(
+            all(user.organization == self.organization for user in first_page.context['page_obj'])
+        )
+        self.assertTrue(
+            all(user.organization == self.organization for user in second_page.context['page_obj'])
+        )
