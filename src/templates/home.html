@@ -3,200 +3,262 @@
 {% block title %}Головна{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Інформаційна система управління даними</h1>
+<div class="dashboard-page">
+    <section class="dashboard-hero">
+        <div class="dashboard-hero-content">
+            <div>
+                <h1 class="dashboard-title">Огляд організації</h1>
+                <p class="dashboard-subtitle">
+                    Ключові показники, найближчі записи та швидкі дії для роботи з даними.
+                </p>
+                <div class="dashboard-context">
+                    <span class="dashboard-role-badge">
+                        {{ request.user.get_role_display }}{% if request.user.organization %} · {{ request.user.organization.name }}{% endif %}
+                    </span>
+                </div>
+            </div>
 
-<div class="mb-4">
-    <p><strong>Користувач:</strong> {{ request.user.username }}</p>
-    <p><strong>Роль:</strong> {{ request.user.get_role_display }}</p>
-</div>
+            {% if header_quick_actions %}
+                <div class="dashboard-actions">
+                    {% for action in header_quick_actions %}
+                        <a href="{{ action.url }}" class="btn btn-{{ action.style }}">{{ action.label }}</a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </section>
 
-{% if onboarding and not onboarding.is_complete %}
-    {% include 'includes/onboarding.html' %}
-{% endif %}
+    {% if onboarding and not onboarding.is_complete %}
+        {% include 'includes/onboarding.html' %}
+    {% endif %}
 
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card stats-card h-100">
-            <div class="card-body">
-                <h5>Клієнти</h5>
-                <p class="display-6 mb-1">{{ clients_count }}</p>
-                <small class="text-muted">Активні: {{ active_clients_count }}</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stats-card h-100">
-            <div class="card-body">
-                <h5>Послуги</h5>
-                <p class="display-6 mb-1">{{ services_count }}</p>
-                <small class="text-muted">Активні: {{ active_services_count }}</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stats-card h-100">
-            <div class="card-body">
-                <h5>Записи</h5>
-                <p class="display-6 mb-1">{{ appointments_count }}</p>
-                <small class="text-muted">Виконані: {{ completed_count }}</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stats-card h-100">
-            <div class="card-body">
-                <h5>Співробітники</h5>
-                <p class="display-6 mb-1">{{ employees_count }}</p>
-                <small class="text-muted">Скасовані записи: {{ cancelled_count }}</small>
-            </div>
-        </div>
-    </div>
-</div>
+    <section class="metric-grid" aria-label="Ключові показники">
+        <article class="metric-card">
+            <div class="metric-card-label">Записи</div>
+            <div class="metric-card-value">{{ appointments_count }}</div>
+            <div class="metric-card-description">Виконані: {{ completed_count }} · Скасовані: {{ cancelled_count }}</div>
+            <a href="{% url 'appointment_list' %}" class="metric-card-link">Перейти →</a>
+        </article>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card stats-card h-100">
-            <div class="card-body">
-                <h5>Дохід</h5>
-                <p class="display-6 mb-1">{{ total_revenue|floatformat:2 }}</p>
-                <small class="text-muted">Виконані записи з фактичною вартістю</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card stats-card h-100">
-            <div class="card-body">
-                <h5>Середній чек</h5>
-                <p class="display-6 mb-1">{{ average_check|floatformat:2 }}</p>
-                <small class="text-muted">За виконаними записами з оплатою</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card stats-card h-100">
-            <div class="card-body">
-                <h5>Записів з оплатою</h5>
-                <p class="display-6 mb-1">{{ revenue_appointments_count }}</p>
-                <small class="text-muted">Враховано в доході</small>
-            </div>
-        </div>
-    </div>
-</div>
+        <article class="metric-card">
+            <div class="metric-card-label">Клієнти</div>
+            <div class="metric-card-value">{{ clients_count }}</div>
+            <div class="metric-card-description">Активні: {{ active_clients_count }}</div>
+            <a href="{% url 'client_list' %}" class="metric-card-link">Перейти →</a>
+        </article>
 
-<div class="row g-4">
-    <div class="col-lg-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h4 class="card-title mb-3">Статистика за статусами</h4>
+        <article class="metric-card">
+            <div class="metric-card-label">Дохід</div>
+            <div class="metric-card-value">{{ total_revenue|floatformat:2 }} грн</div>
+            <div class="metric-card-description">За виконаними записами</div>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card-label">Середній чек</div>
+            <div class="metric-card-value">{{ average_check|floatformat:2 }} грн</div>
+            <div class="metric-card-description">За записами з фактичною вартістю</div>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card-label">Послуги</div>
+            <div class="metric-card-value">{{ services_count }}</div>
+            <div class="metric-card-description">Активні: {{ active_services_count }}</div>
+            <a href="{% url 'service_list' %}" class="metric-card-link">Перейти →</a>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card-label">Співробітники</div>
+            <div class="metric-card-value">{{ employees_count }}</div>
+            <div class="metric-card-description">У поточній організації</div>
+            {% if request.user.role == 'admin' %}
+                <a href="{% url 'user_list' %}" class="metric-card-link">Перейти →</a>
+            {% endif %}
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card-label">Записів з оплатою</div>
+            <div class="metric-card-value">{{ revenue_appointments_count }}</div>
+            <div class="metric-card-description">Враховано в доході</div>
+        </article>
+    </section>
+
+    <section class="dashboard-workspace-grid">
+        <article class="panel-card panel-card-large">
+            <div class="panel-card-header">
+                <div>
+                    <h2>Найближчі записи</h2>
+                    <p>Операційний список майбутніх записів.</p>
+                </div>
+                <a href="{% url 'appointment_list' %}" class="btn btn-sm btn-outline-secondary">Усі записи</a>
+            </div>
+
+            {% if nearest_appointments %}
+                <div class="appointment-list">
+                    {% for appointment in nearest_appointments %}
+                        <a href="{% url 'appointment_detail' appointment.pk %}" class="appointment-item">
+                            <div class="appointment-time">
+                                <span>{{ appointment.appointment_date|date:'d.m' }}</span>
+                                <strong>{{ appointment.start_time|time:'H:i' }}</strong>
+                            </div>
+                            <div class="appointment-content">
+                                <div class="appointment-main-row">
+                                    <strong>{{ appointment.client.full_name }}</strong>
+                                    <span class="status-pill status-{{ appointment.status }}">
+                                        {{ appointment.get_status_display }}
+                                    </span>
+                                </div>
+                                <div class="appointment-service">{{ appointment.service.name }}</div>
+                                {% if appointment.actual_price is not None %}
+                                    <div class="appointment-meta">Факт. вартість: {{ appointment.actual_price|floatformat:2 }} грн</div>
+                                {% endif %}
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <strong>Найближчих записів поки немає</strong>
+                    <span>Коли з’являться майбутні записи, вони будуть тут.</span>
+                    {% if quick_actions %}
+                        <a href="{% url 'appointment_create' %}" class="btn btn-sm btn-primary">Створити запис</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </article>
+
+        <aside class="dashboard-side-stack">
+            <article class="panel-card">
+                <div class="panel-card-header compact">
+                    <h2>Швидкі дії</h2>
+                </div>
+                <div class="quick-actions">
+                    {% if quick_actions %}
+                        {% for action in quick_actions %}
+                            <a href="{{ action.url }}" class="btn btn-{{ action.style }}">{{ action.label }}</a>
+                        {% endfor %}
+                    {% else %}
+                        <button type="button" class="btn btn-secondary" disabled>Створити запис</button>
+                        <button type="button" class="btn btn-outline-secondary" disabled>Додати клієнта</button>
+                        <button type="button" class="btn btn-outline-secondary" disabled>Додати послугу</button>
+                    {% endif %}
+                </div>
+            </article>
+
+            <article class="panel-card">
+                <div class="panel-card-header compact">
+                    <h2>Потребує уваги</h2>
+                </div>
+                <div class="attention-list">
+                    <div class="metric-row{% if completed_without_price_count %} is-warning{% endif %}">
+                        <span>Виконані без фактичної вартості</span>
+                        <strong>{{ completed_without_price_count }}</strong>
+                    </div>
+                    <div class="metric-row{% if planned_count %} is-warning{% endif %}">
+                        <span>Заплановані записи</span>
+                        <strong>{{ planned_count }}</strong>
+                    </div>
+                    <div class="metric-row{% if confirmed_count %} is-warning{% endif %}">
+                        <span>Підтверджені записи</span>
+                        <strong>{{ confirmed_count }}</strong>
+                    </div>
+                </div>
+            </article>
+        </aside>
+    </section>
+
+    <section class="dashboard-section-grid">
+        <div class="dashboard-column">
+            <article class="panel-card">
+                <div class="panel-card-header compact">
+                    <h2>Статистика за статусами</h2>
+                </div>
 
                 {% if status_counts %}
-                    <ul class="list-group">
+                    <div class="status-pill-list">
                         {% for item in status_counts %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>{{ item.status }}</span>
-                                <span class="badge bg-primary rounded-pill">{{ item.total }}</span>
-                            </li>
+                            <div class="status-pill-row">
+                                <span class="status-pill status-{{ item.key }}">{{ item.status }}</span>
+                                <strong>{{ item.total }}</strong>
+                            </div>
                         {% endfor %}
-                    </ul>
+                    </div>
                 {% else %}
-                    <p class="mb-0">Статистика поки відсутня.</p>
+                    <p class="empty-state compact">Поки немає даних</p>
                 {% endif %}
-            </div>
-        </div>
-    </div>
+            </article>
 
-    <div class="col-lg-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h4 class="card-title mb-3">Найближчі записи</h4>
-
-                {% if nearest_appointments %}
-                    <ul class="list-group">
-                        {% for appointment in nearest_appointments %}
-                            <li class="list-group-item">
-                                <div class="dashboard-list-item-title">{{ appointment.client }}</div>
-                                <div>{{ appointment.service }}</div>
-                                <div class="dashboard-meta">
-                                    {{ appointment.appointment_date|date:'d.m.Y' }} | {{ appointment.start_time|time:'H:i' }}
-                                </div>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="mb-0">Найближчі записи відсутні.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h4 class="card-title mb-3">Останні зміни статусів</h4>
-
-                {% if recent_status_changes %}
-                    <ul class="list-group">
-                        {% for item in recent_status_changes %}
-                            <li class="list-group-item">
-                                <div class="dashboard-list-item-title">Запис #{{ item.appointment.id }}</div>
-                                <div>
-                                    {{ item.get_old_status_display }} → {{ item.get_new_status_display }}
-                                </div>
-                                <div class="dashboard-meta">
-                                    {{ item.changed_at|date:'d.m.Y H:i' }}
-                                </div>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="mb-0">Зміни статусів поки відсутні.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4 mt-1">
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-body">
-                <h4 class="card-title mb-3">Популярні послуги</h4>
+            <article class="panel-card">
+                <div class="panel-card-header compact">
+                    <h2>Популярні послуги</h2>
+                </div>
 
                 {% if popular_services %}
-                    <ul class="list-group">
+                    <div class="metric-list">
                         {% for item in popular_services %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="metric-list-item">
                                 <span>{{ item.service__name }}</span>
-                                <span class="badge bg-success rounded-pill">{{ item.total }}</span>
-                            </li>
+                                <span class="badge rounded-pill text-bg-success">{{ item.total }}</span>
+                            </div>
                         {% endfor %}
-                    </ul>
+                    </div>
                 {% else %}
-                    <p class="mb-0">Дані поки відсутні.</p>
+                    <p class="empty-state compact">Поки немає даних</p>
                 {% endif %}
-            </div>
+            </article>
         </div>
-    </div>
 
-    <div class="col-lg-6">
-        <div class="card h-100">
-            <div class="card-body">
-                <h4 class="card-title mb-3">Завантаженість співробітників</h4>
+        <div class="dashboard-column">
+            <article class="panel-card">
+                <div class="panel-card-header compact">
+                    <h2>Завантаженість співробітників</h2>
+                </div>
 
                 {% if employee_workload %}
-                    <ul class="list-group">
+                    <div class="metric-list">
                         {% for item in employee_workload %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>{{ item.employee__username }}</span>
-                                <span class="badge bg-dark rounded-pill">{{ item.total }}</span>
-                            </li>
+                            <div class="workload-item">
+                                <div class="metric-list-item">
+                                    <span>{{ item.employee__username }}</span>
+                                    <span class="badge rounded-pill text-bg-dark">{{ item.total }}</span>
+                                </div>
+                                <div class="workload-progress" aria-hidden="true">
+                                    <span></span>
+                                </div>
+                            </div>
                         {% endfor %}
-                    </ul>
+                    </div>
                 {% else %}
-                    <p class="mb-0">Дані поки відсутні.</p>
+                    <p class="empty-state compact">Поки немає даних</p>
                 {% endif %}
-            </div>
+            </article>
+
+            <article class="panel-card">
+                <div class="panel-card-header compact">
+                    <h2>Останні зміни статусів</h2>
+                </div>
+
+                {% if recent_status_changes %}
+                    <div class="timeline-list">
+                        {% for item in recent_status_changes %}
+                            <div class="timeline-item">
+                                <div>
+                                    <strong>{{ item.appointment.client.full_name }}</strong>
+                                    <span>{{ item.appointment.service.name }}</span>
+                                </div>
+                                <div class="timeline-status">
+                                    <span class="status-pill status-{{ item.old_status }}">{{ item.get_old_status_display }}</span>
+                                    <span>→</span>
+                                    <span class="status-pill status-{{ item.new_status }}">{{ item.get_new_status_display }}</span>
+                                </div>
+                                <time>{{ item.changed_at|date:'d.m.Y H:i' }}</time>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state compact">Поки немає даних</p>
+                {% endif %}
+            </article>
         </div>
-    </div>
+    </section>
 </div>
 {% endblock %}

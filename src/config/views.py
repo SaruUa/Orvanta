@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Count, Sum
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils import timezone
 
 from appointments.models import Appointment, AppointmentStatus, AppointmentStatusHistory
 from audit.models import AuditLog
@@ -102,10 +103,20 @@ def get_dashboard_analytics(user):
     )
 
     status_map = dict(Appointment._meta.get_field('status').choices)
+    status_class_map = {
+        AppointmentStatus.PLANNED: 'planned',
+        AppointmentStatus.CONFIRMED: 'confirmed',
+        AppointmentStatus.COMPLETED: 'completed',
+        AppointmentStatus.CANCELLED: 'cancelled',
+    }
+    appointments_total = appointments.count()
     status_counts = [
         {
+            'key': item['status'],
             'status': status_map.get(item['status'], item['status']),
             'total': item['total'],
+            'percentage': round((item['total'] / appointments_total) * 100) if appointments_total else 0,
+            'css_class': status_class_map.get(item['status'], 'default'),
         }
         for item in raw_status_counts
     ]
@@ -124,6 +135,12 @@ def get_dashboard_analytics(user):
 
     completed_count = appointments.filter(status=AppointmentStatus.COMPLETED).count()
     cancelled_count = appointments.filter(status=AppointmentStatus.CANCELLED).count()
+    planned_count = appointments.filter(status=AppointmentStatus.PLANNED).count()
+    confirmed_count = appointments.filter(status=AppointmentStatus.CONFIRMED).count()
+    completed_without_price_count = appointments.filter(
+        status=AppointmentStatus.COMPLETED,
+        actual_price__isnull=True,
+    ).count()
     revenue_appointments = appointments.filter(
         status=AppointmentStatus.COMPLETED,
         actual_price__isnull=False,
@@ -155,6 +172,9 @@ def get_dashboard_analytics(user):
         ).count(),
         'completed_count': completed_count,
         'cancelled_count': cancelled_count,
+        'planned_count': planned_count,
+        'confirmed_count': confirmed_count,
+        'completed_without_price_count': completed_without_price_count,
         'total_revenue': total_revenue,
         'average_check': average_check,
         'revenue_appointments_count': revenue_appointments.count(),
@@ -170,18 +190,62 @@ def home_view(request):
     appointments = analytics.pop('appointments_queryset')
     onboarding = get_onboarding_status(request.user)
 
-    nearest_appointments = appointments.order_by('appointment_date', 'start_time')[:5]
+    nearest_appointments = (
+        appointments.exclude(status=AppointmentStatus.CANCELLED)
+        .filter(appointment_date__gte=timezone.localdate())
+        .order_by('appointment_date', 'start_time')[:5]
+    )
 
     recent_status_changes = AppointmentStatusHistory.objects.select_related(
         'appointment',
+        'appointment__client',
+        'appointment__service',
         'changed_by',
     ).filter(organization=request.user.organization).order_by('-changed_at')[:5]
+
+    can_manage_data = (
+        request.user.organization_id is not None
+        and request.user.role in {UserRole.ADMIN, UserRole.MANAGER}
+    )
+    can_manage_users = (
+        request.user.organization_id is not None
+        and request.user.role == UserRole.ADMIN
+    )
+    quick_actions = []
+
+    if can_manage_data:
+        quick_actions.extend([
+            {
+                'label': 'Створити запис',
+                'url': reverse('appointment_create'),
+                'style': 'primary',
+            },
+            {
+                'label': 'Додати клієнта',
+                'url': reverse('client_create'),
+                'style': 'outline-primary',
+            },
+            {
+                'label': 'Додати послугу',
+                'url': reverse('service_create'),
+                'style': 'outline-secondary',
+            },
+        ])
+
+    if can_manage_users:
+        quick_actions.append({
+            'label': 'Додати співробітника',
+            'url': reverse('user_create'),
+            'style': 'outline-secondary',
+        })
 
     context = {
         **analytics,
         'onboarding': onboarding,
         'nearest_appointments': nearest_appointments,
         'recent_status_changes': recent_status_changes,
+        'quick_actions': quick_actions,
+        'header_quick_actions': quick_actions[:2],
     }
     return render(request, 'home.html', context)
 

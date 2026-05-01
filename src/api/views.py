@@ -59,7 +59,13 @@ class DashboardAnalyticsApiView(APIView):
                 'total_revenue': analytics['total_revenue'],
                 'average_check': analytics['average_check'],
                 'revenue_appointments_count': analytics['revenue_appointments_count'],
-                'status_counts': analytics['status_counts'],
+                'status_counts': [
+                    {
+                        'status': item['status'],
+                        'total': item['total'],
+                    }
+                    for item in analytics['status_counts']
+                ],
                 'popular_services': [
                     {
                         'service_name': item['service__name'],

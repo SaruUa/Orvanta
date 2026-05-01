@@ -342,6 +342,9 @@ class DashboardRevenueAnalyticsTests(TestCase):
         self.assertEqual(analytics['total_revenue'], Decimal('350.00'))
         self.assertEqual(analytics['average_check'], Decimal('175.00'))
         self.assertEqual(analytics['revenue_appointments_count'], 2)
+        self.assertEqual(analytics['planned_count'], 1)
+        self.assertEqual(analytics['confirmed_count'], 1)
+        self.assertEqual(analytics['completed_without_price_count'], 1)
 
     def test_dashboard_revenue_defaults_to_zero_without_completed_paid_appointments(self):
         self._create_appointment(status=AppointmentStatus.COMPLETED, actual_price=None)

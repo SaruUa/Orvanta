@@ -1,31 +1,31 @@
-<section class="card mb-4">
-    <div class="card-body">
-        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+<section class="dashboard-card onboarding-card">
+    <div class="onboarding-card-body">
+        <div class="onboarding-header">
             <div>
                 <h2 class="h4 mb-1">Початкове налаштування організації</h2>
-                <p class="text-muted mb-0">
+                <p>
                     Виконайте кілька кроків, щоб підготувати робочий простір до використання.
                 </p>
             </div>
-            <span class="badge bg-primary align-self-start">
+            <span class="badge text-bg-primary">
                 {{ onboarding.steps|length }} кроків
             </span>
         </div>
 
-        <div class="list-group">
+        <div class="onboarding-steps">
             {% for step in onboarding.steps %}
-                <div class="list-group-item d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-                    <div class="d-flex align-items-center gap-2">
+                <div class="onboarding-step">
+                    <div class="onboarding-step-main">
                         {% if step.is_done %}
-                            <span class="badge bg-success">Виконано</span>
+                            <span class="badge text-bg-success">Виконано</span>
                         {% else %}
-                            <span class="badge bg-secondary">Очікує</span>
+                            <span class="badge text-bg-secondary">Очікує</span>
                         {% endif %}
                         <span>{{ step.label }}</span>
                     </div>
 
                     {% if step.is_done %}
-                        <span class="text-success small">Готово</span>
+                        <span class="onboarding-done">Готово</span>
                     {% else %}
                         <a href="{{ step.url }}" class="btn btn-sm btn-outline-primary">
                             {{ step.action_label }}
