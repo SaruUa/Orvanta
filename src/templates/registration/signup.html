@@ -6,14 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Реєстрація в системі</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=organa-brand-20260501">
 </head>
 <body>
 <div class="login-page">
     <div class="login-card">
         <div class="login-card-header">
-            <div class="login-brand">InkManager</div>
-            <p class="login-subtitle">Створення нового робочого простору</p>
+            <div class="auth-brand">
+                <img src="{% static 'img/logo_Organa.png' %}" alt="Organa" class="auth-logo">
+                <p class="auth-subtitle">Система управління даними для бізнесу у сфері послуг</p>
+            </div>
         </div>
 
         <div class="login-card-body">
