@@ -2,7 +2,12 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
-from .views import admin_dashboard_view, home_view
+from .views import (
+    admin_dashboard_view,
+    finance_analytics_export_csv_view,
+    finance_analytics_view,
+    home_view,
+)
 from users.forms import OrganizationAuthenticationForm
 from users.views import (
     organization_settings_view,
@@ -17,6 +22,12 @@ urlpatterns = [
     path('', home_view, name='home'),
     path('api/', include('api.urls')),
     path('admin-dashboard/', admin_dashboard_view, name='admin_dashboard'),
+    path('analytics/finance/', finance_analytics_view, name='finance_analytics'),
+    path(
+        'analytics/finance/export/csv/',
+        finance_analytics_export_csv_view,
+        name='finance_analytics_export_csv',
+    ),
     path(
         'login/',
         auth_views.LoginView.as_view(

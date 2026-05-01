@@ -48,18 +48,6 @@
         </article>
 
         <article class="metric-card">
-            <div class="metric-card-label">Дохід</div>
-            <div class="metric-card-value">{{ total_revenue|floatformat:2 }} грн</div>
-            <div class="metric-card-description">За виконаними записами</div>
-        </article>
-
-        <article class="metric-card">
-            <div class="metric-card-label">Середній чек</div>
-            <div class="metric-card-value">{{ average_check|floatformat:2 }} грн</div>
-            <div class="metric-card-description">За записами з фактичною вартістю</div>
-        </article>
-
-        <article class="metric-card">
             <div class="metric-card-label">Послуги</div>
             <div class="metric-card-value">{{ services_count }}</div>
             <div class="metric-card-description">Активні: {{ active_services_count }}</div>
@@ -73,12 +61,6 @@
             {% if request.user.role == 'admin' %}
                 <a href="{% url 'user_list' %}" class="metric-card-link">Перейти →</a>
             {% endif %}
-        </article>
-
-        <article class="metric-card">
-            <div class="metric-card-label">Записів з оплатою</div>
-            <div class="metric-card-value">{{ revenue_appointments_count }}</div>
-            <div class="metric-card-description">Враховано в доході</div>
         </article>
     </section>
 
@@ -186,6 +168,20 @@
                     <p class="empty-state compact">Поки немає даних</p>
                 {% endif %}
             </article>
+
+            {% if can_view_financials %}
+                <article class="panel-card financial-analytics-card">
+                    <div class="panel-card-header compact">
+                        <h2>Дохід за сьогодні</h2>
+                    </div>
+
+                    <div class="today-revenue-card">
+                        <strong>{{ today_revenue|floatformat:2 }} грн</strong>
+                        <span>Виконані записи з фактичною вартістю за сьогодні.</span>
+                        <a href="{% url 'finance_analytics' %}" class="metric-card-link">Детальніше →</a>
+                    </div>
+                </article>
+            {% endif %}
 
             <article class="panel-card">
                 <div class="panel-card-header compact">

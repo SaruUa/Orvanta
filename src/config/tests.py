@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from appointments.models import Appointment, AppointmentStatus
 from clients.models import Client
@@ -355,3 +356,346 @@ class DashboardRevenueAnalyticsTests(TestCase):
         self.assertEqual(analytics['total_revenue'], Decimal('0.00'))
         self.assertEqual(analytics['average_check'], Decimal('0.00'))
         self.assertEqual(analytics['revenue_appointments_count'], 0)
+
+
+class DashboardFinancialVisibilityTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(
+            name='Financial Visibility Org',
+            slug='financial-visibility-org',
+        )
+        self.admin = User.objects.create_user(
+            username='financial_admin',
+            email='financial_admin@example.com',
+            password='StrongPass123!',
+            role=UserRole.ADMIN,
+            organization=self.organization,
+        )
+        self.manager = User.objects.create_user(
+            username='financial_manager',
+            email='financial_manager@example.com',
+            password='StrongPass123!',
+            role=UserRole.MANAGER,
+            organization=self.organization,
+        )
+        self.employee = User.objects.create_user(
+            username='financial_employee',
+            email='financial_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
+
+    def test_admin_and_manager_see_financial_analytics(self):
+        today = timezone.localdate()
+        client_record = Client.objects.create(
+            full_name='Today Revenue Client',
+            phone='+380501111111',
+            organization=self.organization,
+            created_by=self.admin,
+        )
+        category = ServiceCategory.objects.create(
+            name='Today Revenue Category',
+            organization=self.organization,
+        )
+        service = Service.objects.create(
+            category=category,
+            name='Today Revenue Service',
+            price='100.00',
+            duration_minutes=60,
+            organization=self.organization,
+        )
+        Appointment.objects.create(
+            client=client_record,
+            service=service,
+            employee=self.employee,
+            created_by=self.admin,
+            appointment_date=today,
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            status=AppointmentStatus.COMPLETED,
+            actual_price='125.00',
+            organization=self.organization,
+        )
+
+        for user in (self.admin, self.manager):
+            self.client.force_login(user)
+
+            response = self.client.get(reverse('home'))
+
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.context['can_view_financials'])
+            self.assertEqual(response.context['today_revenue'], Decimal('125.00'))
+            self.assertContains(response, 'Дохід за сьогодні')
+            self.assertContains(response, reverse('finance_analytics'))
+            self.assertContains(response, 'Фінанси')
+            self.assertNotContains(response, 'Середній чек')
+            self.assertNotContains(response, 'Записів з оплатою')
+
+    def test_employee_does_not_see_financial_analytics(self):
+        self.client.force_login(self.employee)
+
+        response = self.client.get(reverse('home'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['can_view_financials'])
+        self.assertNotContains(response, 'Дохід за сьогодні')
+        self.assertNotContains(response, 'Фінанси')
+        self.assertNotContains(response, 'Середній чек')
+        self.assertNotContains(response, 'Записів з оплатою')
+        self.assertNotIn('total_revenue', response.context)
+        self.assertNotIn('average_check', response.context)
+        self.assertNotIn('revenue_appointments_count', response.context)
+
+
+class FinanceAnalyticsTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(
+            name='Finance Analytics Org',
+            slug='finance-analytics-org',
+        )
+        self.other_organization = Organization.objects.create(
+            name='Other Finance Analytics Org',
+            slug='other-finance-analytics-org',
+        )
+        self.admin = User.objects.create_user(
+            username='finance_admin',
+            email='finance_admin@example.com',
+            password='StrongPass123!',
+            role=UserRole.ADMIN,
+            organization=self.organization,
+        )
+        self.manager = User.objects.create_user(
+            username='finance_manager',
+            email='finance_manager@example.com',
+            password='StrongPass123!',
+            role=UserRole.MANAGER,
+            organization=self.organization,
+        )
+        self.employee = User.objects.create_user(
+            username='finance_employee',
+            email='finance_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
+        self.employee_2 = User.objects.create_user(
+            username='finance_employee_2',
+            email='finance_employee_2@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
+        self.other_employee = User.objects.create_user(
+            username='other_finance_employee',
+            email='other_finance_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.other_organization,
+        )
+        self.client_record = Client.objects.create(
+            full_name='Finance Client',
+            phone='+380502220001',
+            organization=self.organization,
+            created_by=self.admin,
+        )
+        self.other_client_record = Client.objects.create(
+            full_name='Other Finance Client',
+            phone='+380502220002',
+            organization=self.other_organization,
+            created_by=self.other_employee,
+        )
+        self.category = ServiceCategory.objects.create(
+            name='Finance Category',
+            organization=self.organization,
+        )
+        self.other_category = ServiceCategory.objects.create(
+            name='Other Finance Category',
+            organization=self.other_organization,
+        )
+        self.service = Service.objects.create(
+            category=self.category,
+            name='Finance Service A',
+            price='100.00',
+            duration_minutes=60,
+            organization=self.organization,
+        )
+        self.service_2 = Service.objects.create(
+            category=self.category,
+            name='Finance Service B',
+            price='200.00',
+            duration_minutes=90,
+            organization=self.organization,
+        )
+        self.other_service = Service.objects.create(
+            category=self.other_category,
+            name='Other Finance Service',
+            price='900.00',
+            duration_minutes=60,
+            organization=self.other_organization,
+        )
+
+        self._create_appointment(
+            service=self.service,
+            employee=self.employee,
+            actual_price='100.00',
+            day=1,
+        )
+        self._create_appointment(
+            service=self.service_2,
+            employee=self.employee_2,
+            actual_price='200.00',
+            day=2,
+        )
+        self._create_appointment(
+            service=self.service,
+            employee=self.employee,
+            actual_price=None,
+            day=3,
+        )
+        self._create_appointment(
+            service=self.service,
+            employee=self.employee,
+            status=AppointmentStatus.CANCELLED,
+            actual_price='500.00',
+            day=4,
+        )
+        self._create_appointment(
+            service=self.service,
+            employee=self.employee,
+            status=AppointmentStatus.PLANNED,
+            actual_price='700.00',
+            day=5,
+        )
+        self._create_appointment(
+            organization=self.other_organization,
+            client=self.other_client_record,
+            service=self.other_service,
+            employee=self.other_employee,
+            created_by=self.other_employee,
+            actual_price='999.00',
+            day=2,
+        )
+
+    def _create_appointment(
+        self,
+        *,
+        organization=None,
+        client=None,
+        service=None,
+        employee=None,
+        created_by=None,
+        status=AppointmentStatus.COMPLETED,
+        actual_price=None,
+        day=1,
+    ):
+        organization = organization or self.organization
+        return Appointment.objects.create(
+            client=client or self.client_record,
+            service=service or self.service,
+            employee=employee or self.employee,
+            created_by=created_by or self.admin,
+            appointment_date=date(2026, 6, day),
+            start_time=time(10, 0),
+            end_time=time(11, 0),
+            status=status,
+            actual_price=actual_price,
+            organization=organization,
+        )
+
+    def test_admin_and_manager_can_access_finance_analytics(self):
+        for user in (self.admin, self.manager):
+            self.client.force_login(user)
+
+            response = self.client.get(reverse('finance_analytics'))
+
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, 'Фінансова аналітика')
+            self.assertContains(response, 'Загальний дохід')
+            self.assertContains(response, 'Finance Service A')
+            self.assertContains(response, 'Finance Service B')
+            self.assertNotContains(response, 'Other Finance Service')
+
+    def test_employee_and_anonymous_cannot_access_finance_analytics(self):
+        self.client.force_login(self.employee)
+        employee_response = self.client.get(reverse('finance_analytics'))
+        self.assertRedirects(employee_response, reverse('home'))
+
+        self.client.logout()
+        anonymous_response = self.client.get(reverse('finance_analytics'))
+        self.assertRedirects(
+            anonymous_response,
+            f"{reverse('login')}?next={reverse('finance_analytics')}",
+        )
+
+    def test_default_metrics_use_completed_paid_current_organization_only(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse('finance_analytics'))
+
+        self.assertEqual(response.context['total_revenue'], Decimal('300.00'))
+        self.assertEqual(response.context['average_check'], Decimal('150.00'))
+        self.assertEqual(response.context['revenue_appointments_count'], 2)
+        self.assertEqual(response.context['completed_without_price_count'], 1)
+
+    def test_finance_filters_by_date_service_employee_and_status(self):
+        self.client.force_login(self.admin)
+
+        date_response = self.client.get(
+            reverse('finance_analytics'),
+            {'date_from': '2026-06-02', 'date_to': '2026-06-02'},
+        )
+        self.assertEqual(date_response.context['total_revenue'], Decimal('200.00'))
+
+        service_response = self.client.get(
+            reverse('finance_analytics'),
+            {'service': self.service.pk},
+        )
+        self.assertEqual(service_response.context['total_revenue'], Decimal('100.00'))
+
+        employee_response = self.client.get(
+            reverse('finance_analytics'),
+            {'employee': self.employee_2.pk},
+        )
+        self.assertEqual(employee_response.context['total_revenue'], Decimal('200.00'))
+
+        cancelled_response = self.client.get(
+            reverse('finance_analytics'),
+            {'status': AppointmentStatus.CANCELLED},
+        )
+        self.assertEqual(cancelled_response.context['total_revenue'], Decimal('500.00'))
+        self.assertEqual(cancelled_response.context['revenue_appointments_count'], 1)
+
+    def test_foreign_service_filter_does_not_leak_data(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(
+            reverse('finance_analytics'),
+            {'service': self.other_service.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context['filter_form'].is_valid())
+        self.assertEqual(response.context['total_revenue'], Decimal('0.00'))
+        self.assertNotContains(response, 'Other Finance Client')
+
+    def test_finance_csv_respects_access_scope_and_filters(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(
+            reverse('finance_analytics_export_csv'),
+            {'service': self.service.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv; charset=utf-8')
+        csv_text = response.content.decode('utf-8-sig')
+        self.assertIn('Загальний дохід', csv_text)
+        self.assertIn('Дата;Клієнт;Послуга;Співробітник;Статус', csv_text)
+        self.assertIn('Finance Service A', csv_text)
+        self.assertNotIn('Finance Service B', csv_text)
+        self.assertNotIn('Other Finance Client', csv_text)
+
+        self.client.force_login(self.employee)
+        employee_response = self.client.get(reverse('finance_analytics_export_csv'))
+        self.assertRedirects(employee_response, reverse('home'))

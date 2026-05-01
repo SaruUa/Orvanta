@@ -516,6 +516,21 @@ class NavigationUiTests(TestCase):
         self.assertNotContains(response, 'href="/admin/"')
         self.assertNotContains(response, reverse('organization_settings'))
 
+    def test_authenticated_navbar_has_home_link_and_no_profile_nav_link(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse('home'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            f'<a class="nav-link-custom active" href="{reverse("home")}">Головна</a>',
+            html=True,
+        )
+        self.assertNotContains(response, '>Профіль</a>')
+        self.assertContains(response, f'class="user-pill" href="{reverse("profile")}"')
+        self.assertContains(response, self.admin_user.username)
+
 
 class UserListPaginationTests(TestCase):
     def setUp(self):

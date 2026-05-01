@@ -1,7 +1,11 @@
+import csv
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Count, Sum
+from django.db.models import Max, Min
+from django.http import HttpResponse
+from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
@@ -9,9 +13,14 @@ from django.utils import timezone
 from appointments.models import Appointment, AppointmentStatus, AppointmentStatusHistory
 from audit.models import AuditLog
 from clients.models import Client
+from config.csv_export import format_csv_date
+from config.forms import FinanceAnalyticsFilterForm
 from services_catalog.models import Service, ServiceCategory
-from users.decorators import admin_required
+from users.decorators import admin_required, manager_or_admin_required
 from users.models import User, UserRole
+
+
+FINANCE_DETAIL_PAGE_SIZE = 25
 
 
 def get_onboarding_status(user):
@@ -184,11 +193,155 @@ def get_dashboard_analytics(user):
     }
 
 
+def _decimal_or_zero(value):
+    return (value or Decimal('0.00')).quantize(Decimal('0.01'))
+
+
+def _finance_filter_data(query_params):
+    data = query_params.copy()
+    if not data.get('status'):
+        data['status'] = AppointmentStatus.COMPLETED
+    return data
+
+
+def _base_finance_queryset(user):
+    if user.organization_id is None:
+        return Appointment.objects.none()
+
+    return Appointment.objects.select_related(
+        'client',
+        'service',
+        'employee',
+    ).filter(organization=user.organization)
+
+
+def _apply_finance_filters(queryset, cleaned_data, *, include_status=True):
+    date_from = cleaned_data.get('date_from')
+    date_to = cleaned_data.get('date_to')
+    service = cleaned_data.get('service')
+    employee = cleaned_data.get('employee')
+    status = cleaned_data.get('status')
+
+    if date_from:
+        queryset = queryset.filter(appointment_date__gte=date_from)
+    if date_to:
+        queryset = queryset.filter(appointment_date__lte=date_to)
+    if service:
+        queryset = queryset.filter(service=service)
+    if employee:
+        queryset = queryset.filter(employee=employee)
+    if include_status and status:
+        queryset = queryset.filter(status=status)
+
+    return queryset
+
+
+def get_finance_analytics(user, filter_form):
+    if not filter_form.is_valid():
+        empty_queryset = Appointment.objects.none()
+        return {
+            'paid_appointments': empty_queryset,
+            'total_revenue': Decimal('0.00'),
+            'average_check': Decimal('0.00'),
+            'min_actual_price': Decimal('0.00'),
+            'max_actual_price': Decimal('0.00'),
+            'revenue_appointments_count': 0,
+            'completed_without_price_count': 0,
+            'service_revenue': [],
+            'employee_revenue': [],
+            'date_revenue': [],
+        }
+
+    base_queryset = _base_finance_queryset(user)
+    filtered_queryset = _apply_finance_filters(
+        base_queryset,
+        filter_form.cleaned_data,
+        include_status=True,
+    )
+    paid_appointments = filtered_queryset.filter(actual_price__isnull=False)
+
+    totals = paid_appointments.aggregate(
+        total_revenue=Sum('actual_price'),
+        average_check=Avg('actual_price'),
+        min_actual_price=Min('actual_price'),
+        max_actual_price=Max('actual_price'),
+    )
+
+    completed_without_price_queryset = _apply_finance_filters(
+        base_queryset,
+        filter_form.cleaned_data,
+        include_status=False,
+    ).filter(
+        status=AppointmentStatus.COMPLETED,
+        actual_price__isnull=True,
+    )
+
+    service_revenue = list(
+        paid_appointments.values('service__name')
+        .annotate(
+            appointments_count=Count('id'),
+            revenue=Sum('actual_price'),
+            average_check=Avg('actual_price'),
+        )
+        .order_by('-revenue', 'service__name')
+    )
+    employee_revenue = list(
+        paid_appointments.values('employee__username')
+        .annotate(
+            appointments_count=Count('id'),
+            revenue=Sum('actual_price'),
+            average_check=Avg('actual_price'),
+        )
+        .order_by('-revenue', 'employee__username')
+    )
+    date_revenue = list(
+        paid_appointments.values('appointment_date')
+        .annotate(
+            appointments_count=Count('id'),
+            revenue=Sum('actual_price'),
+        )
+        .order_by('-appointment_date')
+    )
+
+    return {
+        'paid_appointments': paid_appointments.order_by(
+            '-appointment_date',
+            '-start_time',
+            '-id',
+        ),
+        'total_revenue': _decimal_or_zero(totals['total_revenue']),
+        'average_check': _decimal_or_zero(totals['average_check']),
+        'min_actual_price': _decimal_or_zero(totals['min_actual_price']),
+        'max_actual_price': _decimal_or_zero(totals['max_actual_price']),
+        'revenue_appointments_count': paid_appointments.count(),
+        'completed_without_price_count': completed_without_price_queryset.count(),
+        'service_revenue': service_revenue,
+        'employee_revenue': employee_revenue,
+        'date_revenue': date_revenue,
+    }
+
+
 @login_required
 def home_view(request):
     analytics = get_dashboard_analytics(request.user)
     appointments = analytics.pop('appointments_queryset')
     onboarding = get_onboarding_status(request.user)
+    can_view_financials = request.user.role in {UserRole.ADMIN, UserRole.MANAGER}
+    today_revenue = Decimal('0.00')
+
+    if not can_view_financials:
+        analytics.pop('total_revenue', None)
+        analytics.pop('average_check', None)
+        analytics.pop('revenue_appointments_count', None)
+    elif request.user.organization_id is not None:
+        today_revenue = _decimal_or_zero(
+            Appointment.objects.filter(
+                organization=request.user.organization,
+                appointment_date=timezone.localdate(),
+                status=AppointmentStatus.COMPLETED,
+                actual_price__isnull=False,
+            ).aggregate(total=Sum('actual_price'))['total'],
+        )
 
     nearest_appointments = (
         appointments.exclude(status=AppointmentStatus.CANCELLED)
@@ -246,8 +399,87 @@ def home_view(request):
         'recent_status_changes': recent_status_changes,
         'quick_actions': quick_actions,
         'header_quick_actions': quick_actions[:2],
+        'can_view_financials': can_view_financials,
+        'today_revenue': today_revenue,
     }
     return render(request, 'home.html', context)
+
+
+@manager_or_admin_required
+def finance_analytics_view(request):
+    filter_data = _finance_filter_data(request.GET)
+    filter_form = FinanceAnalyticsFilterForm(
+        filter_data,
+        organization=request.user.organization,
+    )
+    analytics = get_finance_analytics(request.user, filter_form)
+
+    query_params = filter_data.copy()
+    query_params.pop('page', None)
+    query_string = query_params.urlencode()
+
+    page_obj = Paginator(
+        analytics['paid_appointments'],
+        FINANCE_DETAIL_PAGE_SIZE,
+    ).get_page(request.GET.get('page'))
+
+    return render(
+        request,
+        'config/finance_analytics.html',
+        {
+            'filter_form': filter_form,
+            'query_string': query_string,
+            'page_obj': page_obj,
+            **analytics,
+        },
+    )
+
+
+@manager_or_admin_required
+def finance_analytics_export_csv_view(request):
+    filter_form = FinanceAnalyticsFilterForm(
+        _finance_filter_data(request.GET),
+        organization=request.user.organization,
+    )
+    analytics = get_finance_analytics(request.user, filter_form)
+
+    filename = f'finance_analytics_{timezone.localdate():%Y%m%d}.csv'
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response.write('\ufeff')
+
+    writer = csv.writer(response, delimiter=';')
+    writer.writerow(['Показник', 'Значення'])
+    writer.writerow(['Загальний дохід', analytics['total_revenue']])
+    writer.writerow(['Середній чек', analytics['average_check']])
+    writer.writerow(['Кількість записів з оплатою', analytics['revenue_appointments_count']])
+    writer.writerow([
+        'Кількість виконаних без фактичної вартості',
+        analytics['completed_without_price_count'],
+    ])
+    writer.writerow([])
+    writer.writerow([
+        'Дата',
+        'Клієнт',
+        'Послуга',
+        'Співробітник',
+        'Статус',
+        'Базова вартість послуги',
+        'Фактична вартість запису',
+    ])
+
+    for appointment in analytics['paid_appointments']:
+        writer.writerow([
+            format_csv_date(appointment.appointment_date),
+            appointment.client.full_name,
+            appointment.service.name,
+            appointment.employee.get_full_name() or appointment.employee.username,
+            appointment.get_status_display(),
+            appointment.service.price,
+            appointment.actual_price,
+        ])
+
+    return response
 
 
 @admin_required

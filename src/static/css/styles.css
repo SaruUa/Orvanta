@@ -379,8 +379,13 @@ body {
 
 .dashboard-actions .btn,
 .quick-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 0.5rem;
     font-weight: 600;
+    line-height: 1.15;
+    text-align: center;
 }
 
 .dashboard-card {
@@ -945,9 +950,18 @@ body {
 
 .dashboard-actions .btn,
 .quick-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 42px;
     border-radius: 0.75rem;
     font-weight: 650;
+    line-height: 1.15;
+    text-align: center;
+}
+
+.finance-export-actions {
+    align-self: center;
 }
 
 .metric-grid {
@@ -1016,6 +1030,138 @@ body {
 
 .metric-card-link:hover {
     text-decoration: underline;
+}
+
+.financial-analytics-card {
+    padding-bottom: 0.85rem;
+}
+
+.financial-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.financial-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+    min-height: 112px;
+    padding: 0.85rem;
+    border: 1px solid #edf0f4;
+    border-radius: 0.85rem;
+    background-color: #f9fafb;
+}
+
+.financial-metric-label {
+    color: #667085;
+    font-size: 0.75rem;
+    font-weight: 750;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.financial-metric strong {
+    color: #101828;
+    font-size: 1.3rem;
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.financial-metric span:last-child {
+    color: #667085;
+    font-size: 0.86rem;
+    line-height: 1.35;
+}
+
+.today-revenue-card {
+    display: grid;
+    gap: 0.35rem;
+    padding: 0.9rem;
+    border: 1px solid #dbe7ff;
+    border-radius: 0.9rem;
+    background-color: #f8fbff;
+}
+
+.today-revenue-card strong {
+    color: #101828;
+    font-size: 1.55rem;
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.today-revenue-card span {
+    color: #667085;
+    font-size: 0.9rem;
+}
+
+.finance-page {
+    width: 100%;
+    max-width: 1260px;
+    margin: 0 auto;
+    padding-bottom: 2rem;
+}
+
+.finance-filter-card {
+    margin-bottom: 1.25rem;
+}
+
+.finance-filter-form {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(150px, 1fr)) auto;
+    gap: 0.9rem;
+    align-items: end;
+}
+
+.finance-filter-field {
+    min-width: 0;
+}
+
+.finance-filter-field .form-label {
+    margin-bottom: 0.4rem;
+    color: #344054;
+    font-weight: 650;
+}
+
+.finance-filter-actions {
+    display: flex;
+    gap: 0.55rem;
+}
+
+.finance-kpi-grid {
+    margin-bottom: 1.25rem;
+}
+
+.finance-analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.finance-analytics-grid .panel-card:last-child {
+    grid-column: 1 / -1;
+}
+
+.finance-table {
+    margin-bottom: 0;
+}
+
+.finance-table th {
+    color: #667085;
+    font-size: 0.8rem;
+    font-weight: 750;
+    text-transform: uppercase;
+}
+
+.finance-table td {
+    color: #344054;
+    font-size: 0.92rem;
+}
+
+.finance-detail-card {
+    margin-bottom: 1rem;
 }
 
 .dashboard-workspace-grid {
@@ -1348,6 +1494,23 @@ body {
     .metric-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .financial-metric-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .finance-filter-form,
+    .finance-analytics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .finance-analytics-grid .panel-card:last-child {
+        grid-column: auto;
+    }
+
+    .finance-filter-actions {
+        justify-content: flex-start;
+    }
 }
 
 @media (max-width: 768px) {
@@ -1371,6 +1534,10 @@ body {
         align-items: flex-start;
         flex-direction: column;
     }
+
+    .finance-filter-actions {
+        flex-wrap: wrap;
+    }
 }
 
 @media (max-width: 576px) {
@@ -1392,6 +1559,10 @@ body {
         align-items: flex-start;
         min-height: auto;
         padding: 0.65rem 0.75rem;
+    }
+
+    .finance-filter-actions .btn {
+        width: 100%;
     }
 }
 
@@ -1643,11 +1814,16 @@ body {
 }
 
 .form-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 42px;
     padding-right: 1rem;
     padding-left: 1rem;
     border-radius: 0.5rem;
     font-weight: 600;
+    line-height: 1;
+    text-align: center;
 }
 
 .profile-grid {

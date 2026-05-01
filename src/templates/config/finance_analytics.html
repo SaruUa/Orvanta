@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}Фінансова аналітика{% endblock %}
+
+{% block content %}
+<div class="finance-page">
+    <section class="dashboard-hero">
+        <div class="dashboard-hero-content">
+            <div>
+                <h1 class="dashboard-title">Фінансова аналітика</h1>
+                <p class="dashboard-subtitle">
+                    Аналіз доходу за записами з фактичною вартістю.
+                </p>
+            </div>
+            <div class="dashboard-actions finance-export-actions">
+                <a href="{% url 'finance_analytics_export_csv' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline-secondary">
+                    Експорт CSV
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel-card finance-filter-card">
+        {% if filter_form.errors %}
+            <div class="alert alert-danger" role="alert">
+                Перевірте значення фільтрів.
+            </div>
+        {% endif %}
+
+        <form method="get" class="finance-filter-form">
+            {% for field in filter_form.visible_fields %}
+                <div class="finance-filter-field">
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <div class="form-error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <div class="finance-filter-actions">
+                <button type="submit" class="btn btn-primary">Застосувати</button>
+                <a href="{% url 'finance_analytics' %}" class="btn btn-outline-secondary">Скинути</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="metric-grid finance-kpi-grid" aria-label="Фінансові показники">
+        <article class="metric-card">
+            <div class="metric-card-label">Загальний дохід</div>
+            <div class="metric-card-value">{{ total_revenue|floatformat:2 }} грн</div>
+            <div class="metric-card-description">За поточними фільтрами</div>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card-label">Середній чек</div>
+            <div class="metric-card-value">{{ average_check|floatformat:2 }} грн</div>
+            <div class="metric-card-description">За записами з фактичною вартістю</div>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card-label">Записів з оплатою</div>
+            <div class="metric-card-value">{{ revenue_appointments_count }}</div>
+            <div class="metric-card-description">Фактична вартість заповнена</div>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card-label">Виконані без вартості</div>
+            <div class="metric-card-value">{{ completed_without_price_count }}</div>
+            <div class="metric-card-description">Потребують заповнення фактичної вартості</div>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card-label">Мінімальна сума</div>
+            <div class="metric-card-value">{{ min_actual_price|floatformat:2 }} грн</div>
+            <div class="metric-card-description">Серед записів з оплатою</div>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card-label">Максимальна сума</div>
+            <div class="metric-card-value">{{ max_actual_price|floatformat:2 }} грн</div>
+            <div class="metric-card-description">Серед записів з оплатою</div>
+        </article>
+    </section>
+
+    <section class="finance-analytics-grid">
+        <article class="panel-card">
+            <div class="panel-card-header compact">
+                <h2>Дохід за послугами</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table finance-table align-middle">
+                    <thead>
+                    <tr>
+                        <th>Послуга</th>
+                        <th class="text-end">Записи</th>
+                        <th class="text-end">Дохід</th>
+                        <th class="text-end">Середній чек</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in service_revenue %}
+                        <tr>
+                            <td>{{ item.service__name }}</td>
+                            <td class="text-end">{{ item.appointments_count }}</td>
+                            <td class="text-end">{{ item.revenue|floatformat:2 }} грн</td>
+                            <td class="text-end">{{ item.average_check|floatformat:2 }} грн</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-muted">Поки немає даних.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="panel-card">
+            <div class="panel-card-header compact">
+                <h2>Дохід за співробітниками</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table finance-table align-middle">
+                    <thead>
+                    <tr>
+                        <th>Співробітник</th>
+                        <th class="text-end">Записи</th>
+                        <th class="text-end">Дохід</th>
+                        <th class="text-end">Середній чек</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in employee_revenue %}
+                        <tr>
+                            <td>{{ item.employee__username }}</td>
+                            <td class="text-end">{{ item.appointments_count }}</td>
+                            <td class="text-end">{{ item.revenue|floatformat:2 }} грн</td>
+                            <td class="text-end">{{ item.average_check|floatformat:2 }} грн</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-muted">Поки немає даних.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <article class="panel-card">
+            <div class="panel-card-header compact">
+                <h2>Дохід за датами</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table finance-table align-middle">
+                    <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th class="text-end">Записи</th>
+                        <th class="text-end">Дохід</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in date_revenue %}
+                        <tr>
+                            <td>{{ item.appointment_date|date:'d.m.Y' }}</td>
+                            <td class="text-end">{{ item.appointments_count }}</td>
+                            <td class="text-end">{{ item.revenue|floatformat:2 }} грн</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-muted">Поки немає даних.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </section>
+
+    <section class="panel-card finance-detail-card">
+        <div class="panel-card-header">
+            <div>
+                <h2>Деталізація записів</h2>
+                <p>Показані записи з фактичною вартістю за поточними фільтрами.</p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table finance-table align-middle">
+                <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Клієнт</th>
+                    <th>Послуга</th>
+                    <th>Співробітник</th>
+                    <th>Статус</th>
+                    <th class="text-end">Базова вартість</th>
+                    <th class="text-end">Фактична вартість</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for appointment in page_obj %}
+                    <tr>
+                        <td>{{ appointment.appointment_date|date:'d.m.Y' }}</td>
+                        <td>{{ appointment.client.full_name }}</td>
+                        <td>{{ appointment.service.name }}</td>
+                        <td>{{ appointment.employee.get_full_name|default:appointment.employee.username }}</td>
+                        <td>
+                            <span class="status-pill status-{{ appointment.status }}">
+                                {{ appointment.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-end">{{ appointment.service.price|floatformat:2 }} грн</td>
+                        <td class="text-end">{{ appointment.actual_price|floatformat:2 }} грн</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-muted">Поки немає записів з фактичною вартістю.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'includes/pagination.html' with page_obj=page_obj query_string=query_string %}
+    </section>
+</div>
+{% endblock %}
