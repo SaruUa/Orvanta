@@ -3,26 +3,26 @@
 {% block title %}Зміна ролі користувача{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Зміна ролі користувача</h1>
+<div class="form-page">
+    <div class="form-page-header">
+        <h1 class="page-title">Зміна ролі користувача</h1>
+        <p class="form-page-subtitle">Користувач: <strong>{{ user_obj.username }}</strong></p>
+        <div class="form-page-toolbar">
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Назад до списку користувачів</a>
+        </div>
+    </div>
 
-<div class="mb-3">
-    <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Назад до списку користувачів</a>
-</div>
-
-<div class="card">
-    <div class="card-body">
-        <p class="mb-3">
-            <strong>Користувач:</strong> {{ user_obj.username }}
-        </p>
-
-        <form method="post">
-            {% csrf_token %}
-            <p class="mb-3">
-                {{ form.role.label_tag }}
-                {{ form.role }}
-            </p>
-            <button type="submit" class="btn btn-primary">Зберегти роль</button>
-        </form>
+    <div class="card form-card">
+        <div class="card-body">
+            <form method="post" class="app-form">
+                {% csrf_token %}
+                {% include 'includes/form_fields.html' with form=form %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Зберегти роль</button>
+                    <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Скасувати</a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

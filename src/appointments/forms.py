@@ -1,13 +1,14 @@
 from django import forms
 
 from clients.models import Client
+from config.form_ui import BootstrapFormMixin
 from services_catalog.models import Service
 from users.models import User, UserRole
 
 from .models import Appointment, AppointmentStatus
 
 
-class AppointmentForm(forms.ModelForm):
+class AppointmentForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Appointment
         fields = [
@@ -22,21 +23,40 @@ class AppointmentForm(forms.ModelForm):
             'comment',
         ]
         labels = {
+            'client': 'Клієнт',
+            'service': 'Послуга',
+            'employee': 'Співробітник',
+            'appointment_date': 'Дата запису',
+            'start_time': 'Час початку',
+            'end_time': 'Час завершення',
             'actual_price': 'Фактична вартість',
+            'status': 'Статус',
+            'comment': 'Коментар',
         }
         help_texts = {
-            'actual_price': 'Може відрізнятися від базової вартості послуги.',
+            'actual_price': 'Фактична вартість може відрізнятися від базової вартості послуги.',
         }
         widgets = {
             'appointment_date': forms.DateInput(attrs={'type': 'date'}),
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
-            'comment': forms.Textarea(attrs={'rows': 4}),
+            'actual_price': forms.NumberInput(attrs={
+                'min': '0',
+                'step': '0.01',
+                'placeholder': '0.00',
+            }),
+            'comment': forms.Textarea(attrs={
+                'rows': 4,
+                'placeholder': 'Додаткові деталі запису',
+            }),
         }
 
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.organization = organization
+        self.fields['client'].empty_label = 'Оберіть клієнта'
+        self.fields['service'].empty_label = 'Оберіть послугу'
+        self.fields['employee'].empty_label = 'Оберіть співробітника'
 
         if organization is None:
             self.fields['client'].queryset = Client.objects.none()

@@ -1,6 +1,8 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, UserCreationForm
 from django.db.models import Q
+
+from config.form_ui import BootstrapFormMixin
 
 from .models import Organization, User, UserRole
 
@@ -14,7 +16,7 @@ class UserFilterForm(forms.Form):
     query = forms.CharField(
         required=False,
         label='Пошук',
-        widget=forms.TextInput(attrs={'placeholder': 'Username або email'}),
+        widget=forms.TextInput(attrs={'placeholder': 'Ім’я користувача або email'}),
     )
     role = forms.ChoiceField(
         required=False,
@@ -32,19 +34,46 @@ class UserFilterForm(forms.Form):
     )
 
 
-class UserRoleForm(forms.ModelForm):
+def _configure_user_creation_fields(fields):
+    fields['username'].label = 'Ім’я користувача'
+    fields['username'].help_text = 'До 150 символів. Дозволені літери, цифри та @/./+/-/_.'
+    fields['username'].widget.attrs.setdefault('placeholder', 'username')
+
+    fields['email'].widget.attrs.setdefault('placeholder', 'user@example.com')
+
+    fields['password1'].label = 'Пароль'
+    fields['password1'].help_text = 'Використайте надійний пароль, який відповідає вимогам системи.'
+    fields['password1'].widget.attrs.setdefault('placeholder', 'Пароль')
+
+    fields['password2'].label = 'Підтвердження пароля'
+    fields['password2'].help_text = 'Введіть той самий пароль ще раз.'
+    fields['password2'].widget.attrs.setdefault('placeholder', 'Підтвердження пароля')
+
+
+class UserRoleForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = User
         fields = ['role']
+        labels = {
+            'role': 'Роль',
+        }
 
 
-class SignupForm(UserCreationForm):
+class SignupForm(BootstrapFormMixin, UserCreationForm):
     email = forms.EmailField(label='Email', required=True)
     organization_name = forms.CharField(label='Назва організації', max_length=255)
 
     class Meta(UserCreationForm.Meta):
         model = User
         fields = ('username', 'email', 'password1', 'password2', 'organization_name')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _configure_user_creation_fields(self.fields)
+        self.fields['organization_name'].widget.attrs.setdefault(
+            'placeholder',
+            'Назва вашої організації',
+        )
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip().lower()
@@ -61,13 +90,17 @@ class SignupForm(UserCreationForm):
         return organization_name
 
 
-class OrganizationUserCreateForm(UserCreationForm):
+class OrganizationUserCreateForm(BootstrapFormMixin, UserCreationForm):
     email = forms.EmailField(label='Email', required=True)
     role = forms.ChoiceField(label='Роль', choices=SAFE_CREATE_ROLE_CHOICES)
 
     class Meta(UserCreationForm.Meta):
         model = User
         fields = ('username', 'email', 'password1', 'password2', 'role')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _configure_user_creation_fields(self.fields)
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip().lower()
@@ -82,7 +115,7 @@ class OrganizationUserCreateForm(UserCreationForm):
         return role
 
 
-class UserProfileForm(forms.ModelForm):
+class UserProfileForm(BootstrapFormMixin, forms.ModelForm):
     email = forms.EmailField(label='Email', required=True)
 
     class Meta:
@@ -91,7 +124,7 @@ class UserProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['email'].widget.attrs['class'] = 'form-control'
+        self.fields['email'].widget.attrs.setdefault('placeholder', 'user@example.com')
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip().lower()
@@ -100,14 +133,39 @@ class UserProfileForm(forms.ModelForm):
         return email
 
 
-class OrganizationSettingsForm(forms.ModelForm):
+class OrganizationSettingsForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = Organization
         fields = ['name']
+        labels = {
+            'name': 'Назва організації',
+        }
+        help_texts = {
+            'name': 'Slug організації використовується для входу та не змінюється автоматично.',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'placeholder': 'Назва організації'}),
+        }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['name'].widget.attrs['class'] = 'form-control'
+
+class ProfilePasswordChangeForm(BootstrapFormMixin, PasswordChangeForm):
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        self.fields['old_password'].label = 'Поточний пароль'
+        self.fields['old_password'].widget.attrs.setdefault('placeholder', 'Поточний пароль')
+
+        self.fields['new_password1'].label = 'Новий пароль'
+        self.fields['new_password1'].help_text = (
+            'Використайте надійний пароль, який відповідає вимогам системи.'
+        )
+        self.fields['new_password1'].widget.attrs.setdefault('placeholder', 'Новий пароль')
+
+        self.fields['new_password2'].label = 'Підтвердження нового пароля'
+        self.fields['new_password2'].help_text = 'Введіть новий пароль ще раз.'
+        self.fields['new_password2'].widget.attrs.setdefault(
+            'placeholder',
+            'Підтвердження нового пароля',
+        )
 
 
 class OrganizationAuthenticationForm(AuthenticationForm):
@@ -125,6 +183,11 @@ class OrganizationAuthenticationForm(AuthenticationForm):
     def __init__(self, request=None, *args, **kwargs):
         super().__init__(request, *args, **kwargs)
         self.order_fields(['username', 'password', 'organization'])
+        self.fields['username'].label = 'Ім’я користувача'
+        self.fields['username'].widget.attrs.setdefault('placeholder', 'username')
+        self.fields['password'].label = 'Пароль'
+        self.fields['password'].widget.attrs.setdefault('placeholder', 'Пароль')
+        self.fields['organization'].widget.attrs.setdefault('placeholder', 'slug або назва')
 
         for field in self.fields.values():
             existing_class = field.widget.attrs.get('class', '')

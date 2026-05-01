@@ -1,7 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import PasswordChangeForm
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
@@ -13,6 +12,7 @@ from .decorators import admin_required
 from .forms import (
     OrganizationSettingsForm,
     OrganizationUserCreateForm,
+    ProfilePasswordChangeForm,
     SignupForm,
     UserFilterForm,
     UserProfileForm,
@@ -246,17 +246,14 @@ def profile_view(request):
 @login_required
 def profile_password_change_view(request):
     if request.method == 'POST':
-        form = PasswordChangeForm(request.user, request.POST)
+        form = ProfilePasswordChangeForm(request.user, request.POST)
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)
             messages.success(request, 'Пароль успішно змінено.')
             return redirect('profile')
     else:
-        form = PasswordChangeForm(request.user)
-
-    for field in form.fields.values():
-        field.widget.attrs['class'] = 'form-control'
+        form = ProfilePasswordChangeForm(request.user)
 
     return render(
         request,

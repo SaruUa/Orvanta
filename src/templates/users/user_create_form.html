@@ -3,35 +3,26 @@
 {% block title %}Створення користувача{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Створення користувача</h1>
+<div class="form-page">
+    <div class="form-page-header">
+        <h1 class="page-title">Створення користувача</h1>
+        <p class="form-page-subtitle">Обліковий запис буде створено в межах поточної організації.</p>
+        <div class="form-page-toolbar">
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Назад до списку користувачів</a>
+        </div>
+    </div>
 
-<div class="mb-3">
-    <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Назад до списку користувачів</a>
-</div>
-
-<div class="card">
-    <div class="card-body">
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger" role="alert">
-                {% for error in form.non_field_errors %}
-                    <div>{{ error }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
-
-        <form method="post">
-            {% csrf_token %}
-            {% for field in form %}
-                <p class="mb-3">
-                    {{ field.label_tag }}
-                    {{ field }}
-                    {% for error in field.errors %}
-                        <small class="text-danger d-block mt-1">{{ error }}</small>
-                    {% endfor %}
-                </p>
-            {% endfor %}
-            <button type="submit" class="btn btn-primary">Створити користувача</button>
-        </form>
+    <div class="card form-card">
+        <div class="card-body">
+            <form method="post" class="app-form">
+                {% csrf_token %}
+                {% include 'includes/form_fields.html' with form=form %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Створити користувача</button>
+                    <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Скасувати</a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

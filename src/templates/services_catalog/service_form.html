@@ -3,19 +3,26 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">{{ title }}</h1>
+<div class="form-page">
+    <div class="form-page-header">
+        <h1 class="page-title">{{ title }}</h1>
+        <p class="form-page-subtitle">Базова вартість, тривалість і категорія послуги.</p>
+        <div class="form-page-toolbar">
+            <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">Назад до списку послуг</a>
+        </div>
+    </div>
 
-<div class="mb-3">
-    <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">Назад до списку послуг</a>
-</div>
-
-<div class="card">
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-success">Зберегти</button>
-        </form>
+    <div class="card form-card">
+        <div class="card-body">
+            <form method="post" class="app-form">
+                {% csrf_token %}
+                {% include 'includes/form_fields.html' with form=form %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Зберегти</button>
+                    <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">Скасувати</a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

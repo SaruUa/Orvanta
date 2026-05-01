@@ -1,0 +1,56 @@
+{% if form.errors %}
+    <div class="alert alert-danger form-alert" role="alert">
+        <strong>Перевірте форму.</strong>
+        {% if form.non_field_errors %}
+            <div class="mt-2">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% for hidden in form.hidden_fields %}
+    {{ hidden }}
+{% endfor %}
+
+{% for field in form.visible_fields %}
+    {% if field.field.widget.input_type == 'checkbox' %}
+        <div class="form-field checkbox-row{% if field.errors %} has-error{% endif %}">
+            <div class="form-check">
+                {{ field }}
+                <label class="form-check-label" for="{{ field.id_for_label }}">
+                    {{ field.label }}{% if field.field.required %}<span class="required-marker" aria-hidden="true">*</span>{% endif %}
+                </label>
+            </div>
+            {% if field.help_text %}
+                <div class="form-help">{{ field.help_text|safe }}</div>
+            {% endif %}
+            {% if field.errors %}
+                <div class="form-error">
+                    {% for error in field.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="form-field{% if field.errors %} has-error{% endif %}">
+            <label class="form-label" for="{{ field.id_for_label }}">
+                {{ field.label }}{% if field.field.required %}<span class="required-marker" aria-hidden="true">*</span>{% endif %}
+            </label>
+            {{ field }}
+            {% if field.help_text %}
+                <div class="form-help">{{ field.help_text|safe }}</div>
+            {% endif %}
+            {% if field.errors %}
+                <div class="form-error">
+                    {% for error in field.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endfor %}

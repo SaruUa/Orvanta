@@ -3,15 +3,18 @@
 {% block title %}Профіль{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Мій профіль</h1>
+<div class="form-page-header profile-grid">
+    <h1 class="page-title">Мій профіль</h1>
+    <p class="form-page-subtitle">Контактні дані, роль і налаштування організації.</p>
+</div>
 
-<div class="row g-4">
+<div class="row g-4 profile-grid">
     <div class="col-xl-6">
-        <div class="card h-100">
+        <div class="card profile-card h-100">
             <div class="card-body">
                 <h2 class="h5 mb-3">Основна інформація</h2>
                 <dl class="row mb-0">
-                    <dt class="col-sm-5">Username</dt>
+                    <dt class="col-sm-5">Ім’я користувача</dt>
                     <dd class="col-sm-7">{{ request.user.username }}</dd>
 
                     <dt class="col-sm-5">Email</dt>
@@ -43,30 +46,14 @@
     </div>
 
     <div class="col-xl-6">
-        <div class="card h-100">
+        <div class="card profile-card h-100">
             <div class="card-body">
                 <h2 class="h5 mb-3">Редагування профілю</h2>
 
-                {% if profile_form.non_field_errors %}
-                    <div class="alert alert-danger" role="alert">
-                        {% for error in profile_form.non_field_errors %}
-                            <div>{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-
-                <form method="post">
+                <form method="post" class="app-form">
                     {% csrf_token %}
-                    {% for field in profile_form %}
-                        <p class="mb-3">
-                            {{ field.label_tag }}
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <small class="text-danger d-block mt-1">{{ error }}</small>
-                            {% endfor %}
-                        </p>
-                    {% endfor %}
-                    <div class="d-flex gap-2 flex-wrap">
+                    {% include 'includes/form_fields.html' with form=profile_form %}
+                    <div class="form-actions">
                         <button type="submit" name="profile_submit" class="btn btn-primary">Зберегти</button>
                         <a href="{% url 'profile_password_change' %}" class="btn btn-outline-secondary">Змінити пароль</a>
                     </div>
@@ -76,7 +63,7 @@
     </div>
 
     <div class="col-12">
-        <div class="card">
+        <div class="card profile-card">
             <div class="card-body">
                 <h2 class="h5 mb-3">Організація</h2>
 
@@ -101,26 +88,14 @@
                 </dl>
 
                 {% if can_edit_organization and organization_form %}
-                    {% if organization_form.non_field_errors %}
-                        <div class="alert alert-danger" role="alert">
-                            {% for error in organization_form.non_field_errors %}
-                                <div>{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-
-                    <form method="post">
+                    <form method="post" class="app-form">
                         {% csrf_token %}
-                        <p class="mb-3">
-                            {{ organization_form.name.label_tag }}
-                            {{ organization_form.name }}
-                            {% for error in organization_form.name.errors %}
-                                <small class="text-danger d-block mt-1">{{ error }}</small>
-                            {% endfor %}
-                        </p>
-                        <button type="submit" name="organization_submit" class="btn btn-primary">
-                            Оновити назву організації
-                        </button>
+                        {% include 'includes/form_fields.html' with form=organization_form %}
+                        <div class="form-actions">
+                            <button type="submit" name="organization_submit" class="btn btn-primary">
+                                Оновити назву організації
+                            </button>
+                        </div>
                     </form>
                 {% else %}
                     <p class="text-muted mb-0">
