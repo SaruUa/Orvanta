@@ -201,42 +201,31 @@ def user_edit_role_view(request, pk):
 @login_required
 def profile_view(request):
     organization = request.user.organization
+    if request.method == 'POST':
+        if 'organization_submit' in request.POST:
+            messages.error(
+                request,
+                'Налаштування організації доступні на окремій сторінці.',
+            )
+            return redirect('profile')
+
+        profile_form = UserProfileForm(request.POST, instance=request.user)
+        if profile_form.is_valid():
+            profile_form.save()
+            messages.success(request, 'Профіль успішно оновлено.')
+            return redirect('profile')
+    else:
+        profile_form = UserProfileForm(instance=request.user)
+
     can_edit_organization = (
         request.user.role == UserRole.ADMIN and organization is not None
     )
-
-    profile_form = UserProfileForm(instance=request.user)
-    organization_form = None
-    if organization is not None:
-        organization_form = OrganizationSettingsForm(instance=organization)
-
-    if request.method == 'POST':
-        if 'organization_submit' in request.POST:
-            if not can_edit_organization:
-                messages.error(request, 'У вас немає прав для редагування організації.')
-                return redirect('profile')
-
-            organization_form = OrganizationSettingsForm(
-                request.POST,
-                instance=organization,
-            )
-            if organization_form.is_valid():
-                organization_form.save()
-                messages.success(request, 'Назву організації успішно оновлено.')
-                return redirect('profile')
-        else:
-            profile_form = UserProfileForm(request.POST, instance=request.user)
-            if profile_form.is_valid():
-                profile_form.save()
-                messages.success(request, 'Профіль успішно оновлено.')
-                return redirect('profile')
 
     return render(
         request,
         'users/profile.html',
         {
             'profile_form': profile_form,
-            'organization_form': organization_form,
             'organization': organization,
             'can_edit_organization': can_edit_organization,
         },
@@ -264,6 +253,28 @@ def profile_password_change_view(request):
     )
 
 
-@login_required
+@admin_required
 def organization_settings_view(request):
-    return redirect('profile')
+    organization = request.user.organization
+    if organization is None:
+        messages.error(request, 'Ваш користувач не прив’язаний до організації.')
+        return redirect('profile')
+
+    if request.method == 'POST':
+        form = OrganizationSettingsForm(request.POST, instance=organization)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Налаштування організації успішно оновлено.')
+            return redirect('organization_settings')
+    else:
+        form = OrganizationSettingsForm(instance=organization)
+
+    return render(
+        request,
+        'users/organization_settings.html',
+        {
+            'form': form,
+            'organization': organization,
+            'users_count': User.objects.filter(organization=organization).count(),
+        },
+    )

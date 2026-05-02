@@ -3,17 +3,23 @@
 {% block title %}Профіль{% endblock %}
 
 {% block content %}
-<div class="form-page-header profile-grid">
-    <h1 class="page-title">Мій профіль</h1>
-    <p class="form-page-subtitle">Контактні дані, роль і налаштування організації.</p>
-</div>
+<div class="app-page">
+    <header class="page-header">
+        <div>
+            <h1>Мій профіль</h1>
+            <p>Персональні дані користувача, роль і прив’язка до організації.</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'profile_password_change' %}" class="btn btn-outline-secondary">Змінити пароль</a>
+        </div>
+    </header>
 
-<div class="row g-4 profile-grid">
-    <div class="col-xl-6">
-        <div class="card profile-card h-100">
-            <div class="card-body">
-                <h2 class="h5 mb-3">Основна інформація</h2>
-                <dl class="row mb-0">
+    <div class="row g-4 profile-grid">
+        <div class="col-xl-6">
+            <div class="card profile-card h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Основна інформація</h2>
+                    <dl class="row mb-0">
                     <dt class="col-sm-5">Ім’я користувача</dt>
                     <dd class="col-sm-7">{{ request.user.username }}</dd>
 
@@ -39,33 +45,39 @@
                     <dd class="col-sm-7">{{ request.user.last_login|date:'d.m.Y H:i'|default:'—' }}</dd>
 
                     <dt class="col-sm-5">Активний</dt>
-                    <dd class="col-sm-7">{{ request.user.is_active|yesno:'Так,Ні' }}</dd>
-                </dl>
+                    <dd class="col-sm-7">
+                        {% if request.user.is_active %}
+                            <span class="badge-soft badge-soft-success">Активний</span>
+                        {% else %}
+                            <span class="badge-soft badge-soft-muted">Неактивний</span>
+                        {% endif %}
+                    </dd>
+                    </dl>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-xl-6">
-        <div class="card profile-card h-100">
-            <div class="card-body">
-                <h2 class="h5 mb-3">Редагування профілю</h2>
+        <div class="col-xl-6">
+            <div class="card profile-card h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Редагування профілю</h2>
 
-                <form method="post" class="app-form">
-                    {% csrf_token %}
-                    {% include 'includes/form_fields.html' with form=profile_form %}
-                    <div class="form-actions">
-                        <button type="submit" name="profile_submit" class="btn btn-primary">Зберегти</button>
-                        <a href="{% url 'profile_password_change' %}" class="btn btn-outline-secondary">Змінити пароль</a>
-                    </div>
-                </form>
+                    <form method="post" class="app-form">
+                        {% csrf_token %}
+                        {% include 'includes/form_fields.html' with form=profile_form %}
+                        <div class="form-actions">
+                            <button type="submit" name="profile_submit" class="btn btn-primary">Зберегти</button>
+                            <a href="{% url 'profile_password_change' %}" class="btn btn-outline-secondary">Змінити пароль</a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-12">
-        <div class="card profile-card">
-            <div class="card-body">
-                <h2 class="h5 mb-3">Організація</h2>
+        <div class="col-12">
+            <div class="card profile-card">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">Організація</h2>
 
                 <dl class="row mb-3">
                     <dt class="col-sm-3">Назва</dt>
@@ -87,21 +99,16 @@
                     </dd>
                 </dl>
 
-                {% if can_edit_organization and organization_form %}
-                    <form method="post" class="app-form">
-                        {% csrf_token %}
-                        {% include 'includes/form_fields.html' with form=organization_form %}
-                        <div class="form-actions">
-                            <button type="submit" name="organization_submit" class="btn btn-primary">
-                                Оновити назву організації
-                            </button>
-                        </div>
-                    </form>
+                {% if can_edit_organization %}
+                    <a href="{% url 'organization_settings' %}" class="btn btn-outline-primary">
+                        Перейти до налаштувань організації
+                    </a>
                 {% else %}
                     <p class="text-muted mb-0">
                         Редагування назви організації доступне лише адміністратору організації.
                     </p>
                 {% endif %}
+                </div>
             </div>
         </div>
     </div>

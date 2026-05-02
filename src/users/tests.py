@@ -369,7 +369,7 @@ class OrganizationLoginTests(TestCase):
         self.assertEqual(response.wsgi_request.user.pk, superuser.pk)
 
 
-class OrganizationSettingsInProfileTests(TestCase):
+class OrganizationSettingsTests(TestCase):
     def setUp(self):
         self.organization = Organization.objects.create(name='Org One', slug='org-one')
         self.other_organization = Organization.objects.create(name='Org Two', slug='org-two')
@@ -403,43 +403,61 @@ class OrganizationSettingsInProfileTests(TestCase):
             organization=self.other_organization,
         )
 
-    def test_organization_settings_route_redirects_to_profile(self):
+    def test_admin_can_open_organization_settings(self):
         self.client.force_login(self.admin_user)
-        response = self.client.get(reverse('organization_settings'))
-        self.assertRedirects(response, reverse('profile'))
 
-    def test_admin_can_change_organization_name_via_profile(self):
+        response = self.client.get(reverse('organization_settings'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Налаштування організації')
+        self.assertContains(response, self.organization.name)
+        self.assertContains(response, self.organization.slug)
+
+    def test_manager_employee_and_anonymous_cannot_open_organization_settings(self):
+        for user in (self.manager_user, self.employee_user):
+            self.client.force_login(user)
+
+            response = self.client.get(reverse('organization_settings'))
+
+            self.assertRedirects(response, reverse('home'))
+            self.client.logout()
+
+        anonymous_response = self.client.get(reverse('organization_settings'))
+        self.assertRedirects(
+            anonymous_response,
+            f"{reverse('login')}?next={reverse('organization_settings')}",
+        )
+
+    def test_admin_can_change_organization_name_via_settings(self):
         self.client.force_login(self.admin_user)
 
         response = self.client.post(
-            reverse('profile'),
+            reverse('organization_settings'),
             data={
-                'organization_submit': '1',
                 'name': 'Org One Updated',
             },
             follow=True,
         )
 
-        self.assertRedirects(response, reverse('profile'))
+        self.assertRedirects(response, reverse('organization_settings'))
         self.organization.refresh_from_db()
         self.assertEqual(self.organization.name, 'Org One Updated')
-        self.assertContains(response, 'Назву організації успішно оновлено.')
+        self.assertContains(response, 'Налаштування організації успішно оновлено.')
 
-    def test_manager_and_employee_cannot_change_organization_name_via_profile(self):
+    def test_manager_and_employee_cannot_change_organization_name_via_settings(self):
         for user in (self.manager_user, self.employee_user):
             self.client.force_login(user)
 
             response = self.client.post(
-                reverse('profile'),
+                reverse('organization_settings'),
                 data={
-                    'organization_submit': '1',
                     'name': 'Blocked Rename',
                     'slug': 'blocked-slug',
                 },
                 follow=True,
             )
-            self.assertRedirects(response, reverse('profile'))
-            self.assertContains(response, 'У вас немає прав для редагування організації.')
+            self.assertRedirects(response, reverse('home'))
+            self.assertContains(response, 'У вас немає прав доступу до цієї сторінки.')
 
             self.organization.refresh_from_db()
             self.assertEqual(self.organization.name, 'Org One')
@@ -450,16 +468,15 @@ class OrganizationSettingsInProfileTests(TestCase):
         self.client.force_login(self.admin_user)
 
         response = self.client.post(
-            reverse('profile'),
+            reverse('organization_settings'),
             data={
-                'organization_submit': '1',
                 'name': 'Renamed Organization',
                 'slug': 'hacked-slug-value',
             },
             follow=True,
         )
 
-        self.assertRedirects(response, reverse('profile'))
+        self.assertRedirects(response, reverse('organization_settings'))
         self.organization.refresh_from_db()
         self.assertEqual(self.organization.name, 'Renamed Organization')
         self.assertEqual(self.organization.slug, 'org-one')
@@ -468,28 +485,52 @@ class OrganizationSettingsInProfileTests(TestCase):
         self.client.force_login(self.admin_user)
 
         response = self.client.post(
-            reverse('profile'),
+            reverse('organization_settings'),
             data={
-                'organization_submit': '1',
                 'name': 'Org One Secure Rename',
                 'organization_id': self.other_organization.pk,
             },
             follow=True,
         )
 
-        self.assertRedirects(response, reverse('profile'))
+        self.assertRedirects(response, reverse('organization_settings'))
         self.organization.refresh_from_db()
         self.other_organization.refresh_from_db()
         self.assertEqual(self.organization.name, 'Org One Secure Rename')
         self.assertEqual(self.other_organization.name, 'Org Two')
 
-    def test_profile_page_shows_edit_organization_ui_only_for_admin(self):
+    def test_profile_no_longer_changes_organization_name_directly(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse('profile'),
+            data={
+                'organization_submit': '1',
+                'name': 'Profile Rename Should Not Apply',
+                'slug': 'hacked-slug-value',
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('profile'))
+        self.organization.refresh_from_db()
+        self.assertEqual(self.organization.name, 'Org One')
+        self.assertEqual(self.organization.slug, 'org-one')
+        self.assertContains(
+            response,
+            'Налаштування організації доступні на окремій сторінці.',
+        )
+
+    def test_profile_page_shows_organization_settings_link_only_for_admin(self):
         self.client.force_login(self.admin_user)
         admin_response = self.client.get(reverse('profile'))
-        self.assertContains(admin_response, 'Оновити назву організації')
+        self.assertContains(admin_response, reverse('organization_settings'))
+        self.assertContains(admin_response, 'Перейти до налаштувань організації')
+        self.assertNotContains(admin_response, 'Оновити назву організації')
 
         self.client.force_login(self.manager_user)
         manager_response = self.client.get(reverse('profile'))
+        self.assertNotContains(manager_response, reverse('organization_settings'))
         self.assertNotContains(manager_response, 'Оновити назву організації')
 
 
@@ -503,6 +544,20 @@ class NavigationUiTests(TestCase):
             role=UserRole.ADMIN,
             organization=self.organization,
         )
+        self.manager_user = User.objects.create_user(
+            username='nav_manager',
+            email='nav_manager@example.com',
+            password='StrongPass123!',
+            role=UserRole.MANAGER,
+            organization=self.organization,
+        )
+        self.employee_user = User.objects.create_user(
+            username='nav_employee',
+            email='nav_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
 
     def test_login_page_has_developer_link_to_django_admin(self):
         response = self.client.get(reverse('login'))
@@ -514,9 +569,8 @@ class NavigationUiTests(TestCase):
         response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'href="/admin/"')
-        self.assertNotContains(response, reverse('organization_settings'))
 
-    def test_authenticated_navbar_has_home_link_and_no_profile_nav_link(self):
+    def test_authenticated_navbar_has_home_link_and_user_dropdown(self):
         self.client.force_login(self.admin_user)
 
         response = self.client.get(reverse('home'))
@@ -527,9 +581,31 @@ class NavigationUiTests(TestCase):
             f'<a class="nav-link-custom active" href="{reverse("home")}">Головна</a>',
             html=True,
         )
-        self.assertNotContains(response, '>Профіль</a>')
-        self.assertContains(response, f'class="user-pill" href="{reverse("profile")}"')
+        self.assertContains(response, 'class="user-dropdown"')
+        self.assertContains(response, 'class="user-pill"')
+        self.assertContains(response, f'href="{reverse("profile")}"')
+        self.assertContains(response, f'href="{reverse("profile_password_change")}"')
+        self.assertContains(response, reverse('organization_settings'))
+        self.assertContains(response, 'Профіль')
+        self.assertContains(response, 'Змінити пароль')
+        self.assertContains(response, 'Налаштування організації')
+        self.assertContains(response, 'Вийти')
         self.assertContains(response, self.admin_user.username)
+
+    def test_organization_settings_dropdown_item_is_admin_only(self):
+        self.client.force_login(self.admin_user)
+        admin_response = self.client.get(reverse('home'))
+        self.assertContains(admin_response, 'Налаштування організації')
+        self.assertContains(admin_response, reverse('organization_settings'))
+
+        for user in (self.manager_user, self.employee_user):
+            self.client.force_login(user)
+
+            response = self.client.get(reverse('home'))
+
+            self.assertNotContains(response, 'Налаштування організації')
+            self.assertNotContains(response, reverse('organization_settings'))
+            self.client.logout()
 
 
 class UserListPaginationTests(TestCase):

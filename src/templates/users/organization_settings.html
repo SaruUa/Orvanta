@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Налаштування організації{% endblock %}
+
+{% block content %}
+<div class="app-page">
+    <header class="page-header">
+        <div>
+            <h1>Налаштування організації</h1>
+            <p>Керуйте базовими параметрами робочого простору вашої організації.</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'profile' %}" class="btn btn-outline-secondary">Назад до профілю</a>
+        </div>
+    </header>
+
+    <div class="organization-settings-grid">
+        <section class="detail-card">
+            <div class="table-card-header px-0 pt-0">
+                <div>
+                    <h2>Поточні дані</h2>
+                    <p>Slug використовується для входу й не змінюється автоматично.</p>
+                </div>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Назва</span>
+                    <span class="detail-value">{{ organization.name }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Slug</span>
+                    <span class="detail-value">{{ organization.slug }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Користувачів</span>
+                    <span class="detail-value">{{ users_count }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Створено</span>
+                    <span class="detail-value">{{ organization.created_at|date:'d.m.Y H:i' }}</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card form-card organization-settings-card">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Редагування</h2>
+                <form method="post" class="app-form">
+                    {% csrf_token %}
+                    {% include 'includes/form_fields.html' with form=form %}
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Зберегти зміни</button>
+                        <a href="{% url 'profile' %}" class="btn btn-outline-secondary">Скасувати</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

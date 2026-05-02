@@ -3,110 +3,106 @@
 {% block title %}Адмін-панель{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Адмін-панель</h1>
+<div class="app-page wide">
+    <header class="page-header">
+        <div>
+            <h1>Адмін-панель</h1>
+            <p>Службовий огляд користувачів, ролей і подій організації.</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Користувачі системи</a>
+            <a href="{% url 'audit_log_list' %}" class="btn btn-outline-primary">Журнал аудиту</a>
+        </div>
+    </header>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card stats-card h-100">
-            <div class="card-body">
-                <h5>Користувачі</h5>
-                <p class="display-6">{{ users_count }}</p>
+    <section class="admin-summary-panel">
+        <div>
+            <h2>Короткий огляд</h2>
+            <p>Основні об’єкти поточної організації.</p>
+        </div>
+        <div class="admin-summary-grid">
+            <div class="admin-summary-item">
+                <span>Користувачі</span>
+                <strong>{{ users_count }}</strong>
+            </div>
+            <div class="admin-summary-item">
+                <span>Клієнти</span>
+                <strong>{{ clients_count }}</strong>
+            </div>
+            <div class="admin-summary-item">
+                <span>Послуги</span>
+                <strong>{{ services_count }}</strong>
+            </div>
+            <div class="admin-summary-item">
+                <span>Записи</span>
+                <strong>{{ appointments_count }}</strong>
             </div>
         </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stats-card h-100">
-            <div class="card-body">
-                <h5>Клієнти</h5>
-                <p class="display-6">{{ clients_count }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stats-card h-100">
-            <div class="card-body">
-                <h5>Послуги</h5>
-                <p class="display-6">{{ services_count }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stats-card h-100">
-            <div class="card-body">
-                <h5>Записи</h5>
-                <p class="display-6">{{ appointments_count }}</p>
-            </div>
-        </div>
-    </div>
-</div>
+    </section>
 
-<div class="row g-4">
-    <div class="col-lg-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h4 class="card-title mb-3">Ролі користувачів</h4>
-                {% if role_stats %}
-                    <ul class="list-group">
-                        {% for item in role_stats %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>{{ item.role }}</span>
-                                <span class="badge bg-primary rounded-pill">{{ item.total }}</span>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="mb-0">Дані відсутні.</p>
-                {% endif %}
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h4 class="card-title mb-3">Ролі користувачів</h4>
+                    {% if role_stats %}
+                        <ul class="list-group">
+                            {% for item in role_stats %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ item.role }}</span>
+                                    <span class="badge bg-primary rounded-pill">{{ item.total }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="mb-0">Дані відсутні.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h4 class="card-title mb-3">Останні користувачі</h4>
+                    {% if recent_users %}
+                        <ul class="list-group">
+                            {% for user in recent_users %}
+                                <li class="list-group-item">
+                                    <div><strong>{{ user.username }}</strong></div>
+                                    <div>{{ user.get_role_display }}</div>
+                                    <div class="dashboard-meta">{{ user.date_joined|date:'d.m.Y H:i' }}</div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="mb-0">Користувачі відсутні.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h4 class="card-title mb-3">Останні події аудиту</h4>
+                    {% if recent_logs %}
+                        <ul class="list-group">
+                            {% for log in recent_logs %}
+                                <li class="list-group-item">
+                                    <div><strong>{{ log.get_action_type_display }}</strong></div>
+                                    <div>{{ log.description }}</div>
+                                    <div class="dashboard-meta">{{ log.created_at|date:'d.m.Y H:i' }}</div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="mb-0">Події аудиту відсутні.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h4 class="card-title mb-3">Останні користувачі</h4>
-                {% if recent_users %}
-                    <ul class="list-group">
-                        {% for user in recent_users %}
-                            <li class="list-group-item">
-                                <div><strong>{{ user.username }}</strong></div>
-                                <div>{{ user.get_role_display }}</div>
-                                <div class="dashboard-meta">{{ user.date_joined|date:'d.m.Y H:i' }}</div>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="mb-0">Користувачі відсутні.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h4 class="card-title mb-3">Останні події аудиту</h4>
-                {% if recent_logs %}
-                    <ul class="list-group">
-                        {% for log in recent_logs %}
-                            <li class="list-group-item">
-                                <div><strong>{{ log.get_action_type_display }}</strong></div>
-                                <div>{{ log.description }}</div>
-                                <div class="dashboard-meta">{{ log.created_at|date:'d.m.Y H:i' }}</div>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="mb-0">Події аудиту відсутні.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="mt-4 d-flex gap-2 flex-wrap">
-    <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Користувачі системи</a>
-    <a href="/admin/" class="btn btn-outline-dark">Перейти до Django Admin</a>
-    <a href="{% url 'audit_log_list' %}" class="btn btn-outline-primary">Відкрити журнал аудиту</a>
 </div>
 {% endblock %}
