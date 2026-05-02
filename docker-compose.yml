@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:18
+    container_name: organa_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: organa_db
+      POSTGRES_USER: organa_user
+      POSTGRES_PASSWORD: organa_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - organa_postgres_data:/var/lib/postgresql
+
+  web:
+    build: .
+    container_name: organa_web
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DEBUG: "True"
+      SECRET_KEY: "django-insecure-docker-dev-key"
+      DATABASE_NAME: organa_db
+      DATABASE_USER: organa_user
+      DATABASE_PASSWORD: organa_password
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+
+volumes:
+  organa_postgres_data:
