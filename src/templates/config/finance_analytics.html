@@ -3,24 +3,27 @@
 {% block title %}Фінансова аналітика{% endblock %}
 
 {% block content %}
-<div class="finance-page">
-    <section class="dashboard-hero">
-        <div class="dashboard-hero-content">
+<div class="app-page wide finance-page">
+    <header class="page-header">
+        <div>
+            <h1>Фінансова аналітика</h1>
+            <p>Аналізуйте дохід за періодами, послугами та співробітниками.</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'finance_analytics_export_csv' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline-secondary">
+                Експорт CSV
+            </a>
+        </div>
+    </header>
+
+    <section class="filter-card finance-filter-card">
+        <div class="filter-card-header">
             <div>
-                <h1 class="dashboard-title">Фінансова аналітика</h1>
-                <p class="dashboard-subtitle">
-                    Аналіз доходу за записами з фактичною вартістю.
-                </p>
-            </div>
-            <div class="dashboard-actions finance-export-actions">
-                <a href="{% url 'finance_analytics_export_csv' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline-secondary">
-                    Експорт CSV
-                </a>
+                <h2 class="filter-card-title">Фільтри</h2>
+                <p class="filter-card-subtitle">Дані рахуються за записами з фактичною вартістю.</p>
             </div>
         </div>
-    </section>
 
-    <section class="panel-card finance-filter-card">
         {% if filter_form.errors %}
             <div class="alert alert-danger" role="alert">
                 Перевірте значення фільтрів.
@@ -84,12 +87,12 @@
     </section>
 
     <section class="finance-analytics-grid">
-        <article class="panel-card">
-            <div class="panel-card-header compact">
+        <article class="table-card">
+            <div class="table-card-header">
                 <h2>Дохід за послугами</h2>
             </div>
             <div class="table-responsive">
-                <table class="table finance-table align-middle">
+                <table class="table app-table finance-table align-middle">
                     <thead>
                     <tr>
                         <th>Послуга</th>
@@ -116,12 +119,12 @@
             </div>
         </article>
 
-        <article class="panel-card">
-            <div class="panel-card-header compact">
+        <article class="table-card">
+            <div class="table-card-header">
                 <h2>Дохід за співробітниками</h2>
             </div>
             <div class="table-responsive">
-                <table class="table finance-table align-middle">
+                <table class="table app-table finance-table align-middle">
                     <thead>
                     <tr>
                         <th>Співробітник</th>
@@ -148,12 +151,12 @@
             </div>
         </article>
 
-        <article class="panel-card">
-            <div class="panel-card-header compact">
+        <article class="table-card">
+            <div class="table-card-header">
                 <h2>Дохід за датами</h2>
             </div>
             <div class="table-responsive">
-                <table class="table finance-table align-middle">
+                <table class="table app-table finance-table align-middle">
                     <thead>
                     <tr>
                         <th>Дата</th>
@@ -179,8 +182,8 @@
         </article>
     </section>
 
-    <section class="panel-card finance-detail-card">
-        <div class="panel-card-header">
+    <section class="table-card finance-detail-card">
+        <div class="table-card-header">
             <div>
                 <h2>Деталізація записів</h2>
                 <p>Показані записи з фактичною вартістю за поточними фільтрами.</p>
@@ -188,7 +191,7 @@
         </div>
 
         <div class="table-responsive">
-            <table class="table finance-table align-middle">
+            <table class="table app-table finance-table align-middle">
                 <thead>
                 <tr>
                     <th>Дата</th>

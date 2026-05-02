@@ -3,22 +3,34 @@
 {% block title %}Послуги{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Список послуг</h1>
+<div class="app-page">
+    <header class="page-header">
+        <div>
+            <h1>Список послуг</h1>
+            <p>Структуруйте перелік послуг і базову вартість.</p>
+        </div>
+        <div class="page-actions">
+            {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                <a href="{% url 'service_create' %}" class="btn btn-primary">Додати послугу</a>
+                <a href="{% url 'category_create' %}" class="btn btn-outline-secondary">Додати категорію</a>
+            {% endif %}
+            <a href="{% url 'category_list' %}" class="btn btn-outline-secondary">Категорії</a>
+            <a
+                href="{% url 'service_export_csv' %}{% if query_string %}?{{ query_string }}{% endif %}"
+                class="btn btn-outline-secondary"
+            >
+                Експорт CSV
+            </a>
+        </div>
+    </header>
 
-<div class="mb-3 d-flex gap-2 flex-wrap">
-    <a href="{% url 'service_create' %}" class="btn btn-primary">Додати послугу</a>
-    <a href="{% url 'category_list' %}" class="btn btn-outline-secondary">Категорії послуг</a>
-    <a
-        href="{% url 'service_export_csv' %}{% if query_string %}?{{ query_string }}{% endif %}"
-        class="btn btn-outline-secondary"
-    >
-        Експорт CSV
-    </a>
-</div>
-
-<div class="card filter-card mb-4">
-    <div class="card-body">
-        <h4 class="card-title mb-4">Пошук і фільтрація</h4>
+    <section class="filter-card">
+        <div class="filter-card-header">
+            <div>
+                <h2 class="filter-card-title">Пошук і фільтрація</h2>
+                <p class="filter-card-subtitle">Знайдіть послугу за назвою, категорією або активністю.</p>
+            </div>
+        </div>
 
         <form method="get" class="filter-form">
             <p>
@@ -36,54 +48,89 @@
                 {{ filter_form.is_active }}
             </p>
 
-            <div class="filter-form-actions">
-                <button type="submit" class="btn btn-primary btn-lg">Застосувати</button>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Застосувати</button>
+                <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">Скинути</a>
             </div>
         </form>
-    </div>
-</div>
+    </section>
 
-{% if page_obj %}
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Назва</th>
-                    <th>Категорія</th>
-                    <th>Базова вартість</th>
-                    <th>Тривалість (хв)</th>
-                    <th>Активна</th>
-                    <th>Дії</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for service in page_obj %}
+    {% if page_obj %}
+        <section class="table-card">
+            <div class="table-card-header">
+                <div>
+                    <h2>Послуги</h2>
+                    <p>Показано {{ page_obj.start_index }}–{{ page_obj.end_index }} із {{ page_obj.paginator.count }}</p>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table app-table align-middle">
+                    <thead>
                     <tr>
-                        <td>{{ service.name }}</td>
-                        <td>{{ service.category|default:'—' }}</td>
-                        <td>{{ service.price }}</td>
-                        <td>{{ service.duration_minutes }}</td>
-                        <td>{{ service.is_active|yesno:'Так,Ні' }}</td>
-                        <td class="d-flex gap-2 flex-wrap">
-                            <a href="{% url 'service_detail' service.pk %}" class="btn btn-sm btn-outline-secondary">Перегляд</a>
-                            <a href="{% url 'service_update' service.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
-
-                            <form method="post" action="{% url 'service_toggle_active' service.pk %}" class="m-0">
-                                {% csrf_token %}
-                                {% if service.is_active %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Деактивувати</button>
-                                {% else %}
-                                    <button type="submit" class="btn btn-sm btn-outline-success">Активувати</button>
-                                {% endif %}
-                            </form>
-                        </td>
+                        <th>Назва</th>
+                        <th>Категорія</th>
+                        <th>Базова вартість</th>
+                        <th>Тривалість</th>
+                        <th>Статус</th>
+                        <th>Дії</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% include 'includes/pagination.html' %}
-{% else %}
-    <p>Послуг за вказаними критеріями не знайдено.</p>
-{% endif %}
+                    </thead>
+                    <tbody>
+                    {% for service in page_obj %}
+                        <tr>
+                            <td>
+                                <span class="cell-title">{{ service.name }}</span>
+                                {% if service.description %}
+                                    <span class="cell-subtitle">{{ service.description|truncatechars:80 }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ service.category|default:'—' }}</td>
+                            <td>{{ service.price|floatformat:2 }} грн</td>
+                            <td>{{ service.duration_minutes }} хв</td>
+                            <td>
+                                {% if service.is_active %}
+                                    <span class="badge-soft badge-soft-success">Активна</span>
+                                {% else %}
+                                    <span class="badge-soft badge-soft-muted">Неактивна</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="{% url 'service_detail' service.pk %}" class="btn btn-sm btn-outline-secondary btn-sm-action">Перегляд</a>
+                                    {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                                        <a href="{% url 'service_update' service.pk %}" class="btn btn-sm btn-outline-primary btn-sm-action">Редагувати</a>
+
+                                        <form method="post" action="{% url 'service_toggle_active' service.pk %}">
+                                            {% csrf_token %}
+                                            {% if service.is_active %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger btn-sm-action">Деактивувати</button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-sm btn-outline-success btn-sm-action">Активувати</button>
+                                            {% endif %}
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% include 'includes/pagination.html' %}
+        </section>
+    {% else %}
+        <section class="table-empty-state">
+            <strong>Послуг поки немає</strong>
+            <span>Створіть послугу або категорію для початку роботи.</span>
+            {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                <div class="empty-state-actions">
+                    <a href="{% url 'service_create' %}" class="btn btn-primary">Додати послугу</a>
+                    <a href="{% url 'category_create' %}" class="btn btn-outline-secondary">Додати категорію</a>
+                </div>
+            {% endif %}
+        </section>
+    {% endif %}
+</div>
 {% endblock %}

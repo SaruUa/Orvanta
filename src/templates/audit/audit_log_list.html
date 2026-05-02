@@ -3,11 +3,21 @@
 {% block title %}Журнал аудиту{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Журнал аудиту</h1>
+<div class="app-page wide">
+    <header class="page-header">
+        <div>
+            <h1>Журнал аудиту</h1>
+            <p>Переглядайте службові події вашої організації.</p>
+        </div>
+    </header>
 
-<div class="card filter-card mb-4">
-    <div class="card-body">
-        <h4 class="card-title mb-4">Фільтрація</h4>
+    <section class="filter-card">
+        <div class="filter-card-header">
+            <div>
+                <h2 class="filter-card-title">Фільтрація</h2>
+                <p class="filter-card-subtitle">Звузьте журнал за користувачем, дією, сутністю або датою.</p>
+            </div>
+        </div>
 
         <form method="get" class="filter-form">
             <p>
@@ -35,44 +45,62 @@
                 {{ filter_form.date_to }}
             </p>
 
-            <div class="filter-form-actions">
-                <button type="submit" class="btn btn-primary btn-lg">Застосувати</button>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Застосувати</button>
+                <a href="{% url 'audit_log_list' %}" class="btn btn-outline-secondary">Скинути</a>
             </div>
         </form>
-    </div>
-</div>
+    </section>
 
-{% if page_obj %}
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Користувач</th>
-                    <th>Тип дії</th>
-                    <th>Сутність</th>
-                    <th>ID сутності</th>
-                    <th>Опис</th>
-                    <th>IP-адреса</th>
-                    <th>Дата і час</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for log in page_obj %}
+    {% if page_obj %}
+        <section class="table-card">
+            <div class="table-card-header">
+                <div>
+                    <h2>Події</h2>
+                    <p>Показано {{ page_obj.start_index }}–{{ page_obj.end_index }} із {{ page_obj.paginator.count }}</p>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table app-table align-middle">
+                    <thead>
                     <tr>
-                        <td>{{ log.user|default:'—' }}</td>
-                        <td>{{ log.get_action_type_display }}</td>
-                        <td>{{ log.get_entity_type_display }}</td>
-                        <td>{{ log.entity_id|default:'—' }}</td>
-                        <td>{{ log.description }}</td>
-                        <td>{{ log.ip_address|default:'—' }}</td>
-                        <td>{{ log.created_at|date:'d.m.Y H:i' }}</td>
+                        <th>Користувач</th>
+                        <th>Тип дії</th>
+                        <th>Сутність</th>
+                        <th>ID</th>
+                        <th>Опис</th>
+                        <th>IP-адреса</th>
+                        <th>Дата і час</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% include 'includes/pagination.html' %}
-{% else %}
-    <p>Записів журналу аудиту не знайдено.</p>
-{% endif %}
+                    </thead>
+                    <tbody>
+                    {% for log in page_obj %}
+                        <tr>
+                            <td>{{ log.user|default:'—' }}</td>
+                            <td>
+                                <span class="badge-soft action-{{ log.action_type }}">
+                                    {{ log.get_action_type_display }}
+                                </span>
+                            </td>
+                            <td><span class="badge-soft badge-soft-muted">{{ log.get_entity_type_display }}</span></td>
+                            <td>{{ log.entity_id|default:'—' }}</td>
+                            <td>{{ log.description }}</td>
+                            <td>{{ log.ip_address|default:'—' }}</td>
+                            <td>{{ log.created_at|date:'d.m.Y H:i' }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% include 'includes/pagination.html' %}
+        </section>
+    {% else %}
+        <section class="table-empty-state">
+            <strong>Записів журналу аудиту не знайдено</strong>
+            <span>Події з’являться тут після дій користувачів у системі.</span>
+        </section>
+    {% endif %}
+</div>
 {% endblock %}

@@ -3,17 +3,26 @@
 {% block title %}Користувачі{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Користувачі системи</h1>
+<div class="app-page">
+    <header class="page-header">
+        <div>
+            <h1>Користувачі системи</h1>
+            <p>Керуйте користувачами, ролями й активністю.</p>
+        </div>
+        {% if request.user.role == 'admin' %}
+            <div class="page-actions">
+                <a href="{% url 'user_create' %}" class="btn btn-primary">Створити користувача</a>
+            </div>
+        {% endif %}
+    </header>
 
-{% if request.user.role == 'admin' %}
-    <div class="mb-3">
-        <a href="{% url 'user_create' %}" class="btn btn-primary">Створити користувача</a>
-    </div>
-{% endif %}
-
-<div class="card filter-card mb-4">
-    <div class="card-body">
-        <h4 class="card-title mb-4">Пошук і фільтрація</h4>
+    <section class="filter-card">
+        <div class="filter-card-header">
+            <div>
+                <h2 class="filter-card-title">Пошук і фільтрація</h2>
+                <p class="filter-card-subtitle">Фільтруйте користувачів за ім’ям, роллю або активністю.</p>
+            </div>
+        </div>
 
         <form method="get" class="filter-form">
             <p>
@@ -31,54 +40,89 @@
                 {{ filter_form.is_active }}
             </p>
 
-            <div class="filter-form-actions">
-                <button type="submit" class="btn btn-primary btn-lg">Застосувати</button>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Застосувати</button>
+                <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Скинути</a>
             </div>
         </form>
-    </div>
-</div>
+    </section>
 
-{% if page_obj %}
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Роль</th>
-                    <th>Активний</th>
-                    <th>Staff</th>
-                    <th>Дата реєстрації</th>
-                    <th>Дії</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user_obj in page_obj %}
+    {% if page_obj %}
+        <section class="table-card">
+            <div class="table-card-header">
+                <div>
+                    <h2>Користувачі</h2>
+                    <p>Показано {{ page_obj.start_index }}–{{ page_obj.end_index }} із {{ page_obj.paginator.count }}</p>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table app-table align-middle">
+                    <thead>
                     <tr>
-                        <td>{{ user_obj.username }}</td>
-                        <td>{{ user_obj.email|default:'—' }}</td>
-                        <td>{{ user_obj.get_role_display }}</td>
-                        <td>{{ user_obj.is_active|yesno:'Так,Ні' }}</td>
-                        <td>{{ user_obj.is_staff|yesno:'Так,Ні' }}</td>
-                        <td>{{ user_obj.date_joined|date:'d.m.Y H:i' }}</td>
-                        <td class="d-flex gap-2 flex-wrap">
-                            <a href="{% url 'user_edit_role' user_obj.pk %}" class="btn btn-sm btn-outline-primary">Змінити роль</a>
-                            <form method="post" action="{% url 'user_toggle_active' user_obj.pk %}" class="m-0">
-                                {% csrf_token %}
-                                {% if user_obj.is_active %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Деактивувати</button>
-                                {% else %}
-                                    <button type="submit" class="btn btn-sm btn-outline-success">Активувати</button>
-                                {% endif %}
-                            </form>
-                        </td>
+                        <th>Користувач</th>
+                        <th>Email</th>
+                        <th>Роль</th>
+                        <th>Статус</th>
+                        <th>Staff</th>
+                        <th>Дата реєстрації</th>
+                        <th>Дії</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% include 'includes/pagination.html' %}
-{% else %}
-    <p>Користувачів не знайдено.</p>
-{% endif %}
+                    </thead>
+                    <tbody>
+                    {% for user_obj in page_obj %}
+                        <tr>
+                            <td><span class="cell-title">{{ user_obj.username }}</span></td>
+                            <td>{{ user_obj.email|default:'—' }}</td>
+                            <td>
+                                <span class="badge-soft role-{{ user_obj.role }}">
+                                    {{ user_obj.get_role_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if user_obj.is_active %}
+                                    <span class="badge-soft badge-soft-success">Активний</span>
+                                {% else %}
+                                    <span class="badge-soft badge-soft-muted">Неактивний</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user_obj.is_staff %}
+                                    <span class="badge-soft badge-soft-info">Так</span>
+                                {% else %}
+                                    <span class="badge-soft badge-soft-muted">Ні</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user_obj.date_joined|date:'d.m.Y H:i' }}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="{% url 'user_edit_role' user_obj.pk %}" class="btn btn-sm btn-outline-primary btn-sm-action">Змінити роль</a>
+                                    <form method="post" action="{% url 'user_toggle_active' user_obj.pk %}">
+                                        {% csrf_token %}
+                                        {% if user_obj.is_active %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger btn-sm-action">Деактивувати</button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-sm btn-outline-success btn-sm-action">Активувати</button>
+                                        {% endif %}
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% include 'includes/pagination.html' %}
+        </section>
+    {% else %}
+        <section class="table-empty-state">
+            <strong>Користувачів не знайдено</strong>
+            <span>Змініть фільтри або створіть нового користувача організації.</span>
+            <div class="empty-state-actions">
+                <a href="{% url 'user_create' %}" class="btn btn-primary">Створити користувача</a>
+            </div>
+        </section>
+    {% endif %}
+</div>
 {% endblock %}

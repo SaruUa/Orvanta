@@ -3,21 +3,32 @@
 {% block title %}Клієнти{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Список клієнтів</h1>
+<div class="app-page">
+    <header class="page-header">
+        <div>
+            <h1>Список клієнтів</h1>
+            <p>Керуйте клієнтською базою та контактними даними.</p>
+        </div>
+        <div class="page-actions">
+            {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                <a href="{% url 'client_create' %}" class="btn btn-primary">Додати клієнта</a>
+            {% endif %}
+            <a
+                href="{% url 'client_export_csv' %}{% if query_string %}?{{ query_string }}{% endif %}"
+                class="btn btn-outline-secondary"
+            >
+                Експорт CSV
+            </a>
+        </div>
+    </header>
 
-<div class="mb-3 d-flex gap-2 flex-wrap">
-    <a href="{% url 'client_create' %}" class="btn btn-primary">Додати клієнта</a>
-    <a
-        href="{% url 'client_export_csv' %}{% if query_string %}?{{ query_string }}{% endif %}"
-        class="btn btn-outline-secondary"
-    >
-        Експорт CSV
-    </a>
-</div>
-
-<div class="card filter-card mb-4">
-    <div class="card-body">
-        <h4 class="card-title mb-4">Пошук і фільтрація</h4>
+    <section class="filter-card">
+        <div class="filter-card-header">
+            <div>
+                <h2 class="filter-card-title">Пошук і фільтрація</h2>
+                <p class="filter-card-subtitle">Знайдіть клієнта за ПІБ, телефоном або email.</p>
+            </div>
+        </div>
 
         <form method="get" class="filter-form">
             <p>
@@ -30,52 +41,81 @@
                 {{ filter_form.is_active }}
             </p>
 
-            <div class="filter-form-actions">
-                <button type="submit" class="btn btn-primary btn-lg">Застосувати</button>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Застосувати</button>
+                <a href="{% url 'client_list' %}" class="btn btn-outline-secondary">Скинути</a>
             </div>
         </form>
-    </div>
-</div>
+    </section>
 
-{% if page_obj %}
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>ПІБ</th>
-                    <th>Телефон</th>
-                    <th>Email</th>
-                    <th>Активний</th>
-                    <th>Дії</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for client in page_obj %}
+    {% if page_obj %}
+        <section class="table-card">
+            <div class="table-card-header">
+                <div>
+                    <h2>Клієнти</h2>
+                    <p>Показано {{ page_obj.start_index }}–{{ page_obj.end_index }} із {{ page_obj.paginator.count }}</p>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table app-table align-middle">
+                    <thead>
                     <tr>
-                        <td>{{ client.full_name }}</td>
-                        <td>{{ client.phone }}</td>
-                        <td>{{ client.email|default:'—' }}</td>
-                        <td>{{ client.is_active|yesno:'Так,Ні' }}</td>
-                        <td class="d-flex gap-2 flex-wrap">
-                            <a href="{% url 'client_detail' client.pk %}" class="btn btn-sm btn-outline-secondary">Перегляд</a>
-                            <a href="{% url 'client_update' client.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
-
-                            <form method="post" action="{% url 'client_toggle_active' client.pk %}" class="m-0">
-                                {% csrf_token %}
-                                {% if client.is_active %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Деактивувати</button>
-                                {% else %}
-                                    <button type="submit" class="btn btn-sm btn-outline-success">Активувати</button>
-                                {% endif %}
-                            </form>
-                        </td>
+                        <th>ПІБ</th>
+                        <th>Телефон</th>
+                        <th>Email</th>
+                        <th>Статус</th>
+                        <th>Дії</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% include 'includes/pagination.html' %}
-{% else %}
-    <p>Клієнтів за вказаними критеріями не знайдено.</p>
-{% endif %}
+                    </thead>
+                    <tbody>
+                    {% for client in page_obj %}
+                        <tr>
+                            <td><span class="cell-title">{{ client.full_name }}</span></td>
+                            <td>{{ client.phone }}</td>
+                            <td>{{ client.email|default:'—' }}</td>
+                            <td>
+                                {% if client.is_active %}
+                                    <span class="badge-soft badge-soft-success">Активний</span>
+                                {% else %}
+                                    <span class="badge-soft badge-soft-muted">Неактивний</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="{% url 'client_detail' client.pk %}" class="btn btn-sm btn-outline-secondary btn-sm-action">Перегляд</a>
+                                    {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                                        <a href="{% url 'client_update' client.pk %}" class="btn btn-sm btn-outline-primary btn-sm-action">Редагувати</a>
+
+                                        <form method="post" action="{% url 'client_toggle_active' client.pk %}">
+                                            {% csrf_token %}
+                                            {% if client.is_active %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger btn-sm-action">Деактивувати</button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-sm btn-outline-success btn-sm-action">Активувати</button>
+                                            {% endif %}
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% include 'includes/pagination.html' %}
+        </section>
+    {% else %}
+        <section class="table-empty-state">
+            <strong>Клієнтів поки немає</strong>
+            <span>Додайте першого клієнта, щоб створювати записи на послуги.</span>
+            {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                <div class="empty-state-actions">
+                    <a href="{% url 'client_create' %}" class="btn btn-primary">Додати клієнта</a>
+                </div>
+            {% endif %}
+        </section>
+    {% endif %}
+</div>
 {% endblock %}

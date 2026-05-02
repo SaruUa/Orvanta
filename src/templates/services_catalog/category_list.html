@@ -3,37 +3,68 @@
 {% block title %}Категорії послуг{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Категорії послуг</h1>
+<div class="app-page">
+    <header class="page-header">
+        <div>
+            <h1>Категорії послуг</h1>
+            <p>Групуйте послуги для зручнішого каталогу та фільтрації.</p>
+        </div>
+        <div class="page-actions">
+            {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                <a href="{% url 'category_create' %}" class="btn btn-primary">Додати категорію</a>
+            {% endif %}
+            <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">До списку послуг</a>
+        </div>
+    </header>
 
-<div class="mb-3 d-flex gap-2">
-    <a href="{% url 'category_create' %}" class="btn btn-primary">Додати категорію</a>
-    <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">До списку послуг</a>
-</div>
+    {% if categories %}
+        <section class="table-card">
+            <div class="table-card-header">
+                <div>
+                    <h2>Категорії</h2>
+                    <p>Список категорій поточної організації.</p>
+                </div>
+            </div>
 
-{% if categories %}
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Назва</th>
-                    <th>Опис</th>
-                    <th>Дії</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for category in categories %}
+            <div class="table-responsive">
+                <table class="table app-table align-middle">
+                    <thead>
                     <tr>
-                        <td>{{ category.name }}</td>
-                        <td>{{ category.description|default:'—' }}</td>
-                        <td>
-                            <a href="{% url 'category_update' category.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
-                        </td>
+                        <th>Назва</th>
+                        <th>Опис</th>
+                        <th>Дії</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-{% else %}
-    <p>Категорії ще не створено.</p>
-{% endif %}
+                    </thead>
+                    <tbody>
+                    {% for category in categories %}
+                        <tr>
+                            <td><span class="cell-title">{{ category.name }}</span></td>
+                            <td>{{ category.description|default:'—' }}</td>
+                            <td>
+                                {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                                    <div class="table-actions">
+                                        <a href="{% url 'category_update' category.pk %}" class="btn btn-sm btn-outline-primary btn-sm-action">Редагувати</a>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% else %}
+        <section class="table-empty-state">
+            <strong>Категорії ще не створено</strong>
+            <span>Додайте категорію, щоб структурувати каталог послуг.</span>
+            {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                <div class="empty-state-actions">
+                    <a href="{% url 'category_create' %}" class="btn btn-primary">Додати категорію</a>
+                </div>
+            {% endif %}
+        </section>
+    {% endif %}
+</div>
 {% endblock %}

@@ -3,21 +3,59 @@
 {% block title %}Деталі послуги{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Деталі послуги</h1>
+<div class="app-page">
+    <header class="page-header">
+        <div>
+            <h1>{{ service.name }}</h1>
+            <p>Деталі послуги, базова вартість і тривалість виконання.</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">Назад до списку послуг</a>
+            {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                <a href="{% url 'service_update' service.pk %}" class="btn btn-primary">Редагувати послугу</a>
+            {% endif %}
+        </div>
+    </header>
 
-<div class="mb-3 d-flex gap-2">
-    <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">Назад до списку послуг</a>
-    <a href="{% url 'service_update' service.pk %}" class="btn btn-primary">Редагувати послугу</a>
+    <section class="detail-card">
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Назва</span>
+                <span class="detail-value">{{ service.name }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Категорія</span>
+                <span class="detail-value">{{ service.category|default:'—' }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Базова вартість</span>
+                <span class="detail-value">{{ service.price|floatformat:2 }} грн</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Тривалість</span>
+                <span class="detail-value">{{ service.duration_minutes }} хв</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Статус</span>
+                {% if service.is_active %}
+                    <span class="badge-soft badge-soft-success">Активна</span>
+                {% else %}
+                    <span class="badge-soft badge-soft-muted">Неактивна</span>
+                {% endif %}
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Створено</span>
+                <span class="detail-value">{{ service.created_at|date:'d.m.Y H:i' }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Оновлено</span>
+                <span class="detail-value">{{ service.updated_at|date:'d.m.Y H:i' }}</span>
+            </div>
+            <div class="detail-item full">
+                <span class="detail-label">Опис</span>
+                <span class="detail-value">{{ service.description|default:'—' }}</span>
+            </div>
+        </div>
+    </section>
 </div>
-
-<ul class="list-group">
-    <li class="list-group-item"><strong>Назва:</strong> {{ service.name }}</li>
-    <li class="list-group-item"><strong>Категорія:</strong> {{ service.category|default:'—' }}</li>
-    <li class="list-group-item"><strong>Опис:</strong> {{ service.description|default:'—' }}</li>
-    <li class="list-group-item"><strong>Базова вартість:</strong> {{ service.price }}</li>
-    <li class="list-group-item"><strong>Тривалість:</strong> {{ service.duration_minutes }} хв</li>
-    <li class="list-group-item"><strong>Активна:</strong> {{ service.is_active|yesno:'Так,Ні' }}</li>
-    <li class="list-group-item"><strong>Створено:</strong> {{ service.created_at }}</li>
-    <li class="list-group-item"><strong>Оновлено:</strong> {{ service.updated_at }}</li>
-</ul>
 {% endblock %}

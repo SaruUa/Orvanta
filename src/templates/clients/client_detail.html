@@ -3,21 +3,59 @@
 {% block title %}Картка клієнта{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Картка клієнта</h1>
+<div class="app-page">
+    <header class="page-header">
+        <div>
+            <h1>{{ client.full_name }}</h1>
+            <p>Картка клієнта з контактами, статусом і службовими датами.</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'client_list' %}" class="btn btn-outline-secondary">Назад до списку</a>
+            {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                <a href="{% url 'client_update' client.pk %}" class="btn btn-primary">Редагувати клієнта</a>
+            {% endif %}
+        </div>
+    </header>
 
-<div class="mb-3 d-flex gap-2">
-    <a href="{% url 'client_list' %}" class="btn btn-outline-secondary">Назад до списку</a>
-    <a href="{% url 'client_update' client.pk %}" class="btn btn-primary">Редагувати клієнта</a>
+    <section class="detail-card">
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">ПІБ</span>
+                <span class="detail-value">{{ client.full_name }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Телефон</span>
+                <span class="detail-value">{{ client.phone }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Email</span>
+                <span class="detail-value">{{ client.email|default:'—' }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Дата народження</span>
+                <span class="detail-value">{{ client.birth_date|date:'d.m.Y'|default:'—' }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Статус</span>
+                {% if client.is_active %}
+                    <span class="badge-soft badge-soft-success">Активний</span>
+                {% else %}
+                    <span class="badge-soft badge-soft-muted">Неактивний</span>
+                {% endif %}
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Створено</span>
+                <span class="detail-value">{{ client.created_at|date:'d.m.Y H:i' }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Оновлено</span>
+                <span class="detail-value">{{ client.updated_at|date:'d.m.Y H:i' }}</span>
+            </div>
+            <div class="detail-item full">
+                <span class="detail-label">Примітки</span>
+                <span class="detail-value">{{ client.notes|default:'—' }}</span>
+            </div>
+        </div>
+    </section>
 </div>
-
-<ul class="list-group">
-    <li class="list-group-item"><strong>ПІБ:</strong> {{ client.full_name }}</li>
-    <li class="list-group-item"><strong>Телефон:</strong> {{ client.phone }}</li>
-    <li class="list-group-item"><strong>Email:</strong> {{ client.email|default:'—' }}</li>
-    <li class="list-group-item"><strong>Дата народження:</strong> {{ client.birth_date|default:'—' }}</li>
-    <li class="list-group-item"><strong>Примітки:</strong> {{ client.notes|default:'—' }}</li>
-    <li class="list-group-item"><strong>Активний:</strong> {{ client.is_active|yesno:'Так,Ні' }}</li>
-    <li class="list-group-item"><strong>Створено:</strong> {{ client.created_at }}</li>
-    <li class="list-group-item"><strong>Оновлено:</strong> {{ client.updated_at }}</li>
-</ul>
 {% endblock %}

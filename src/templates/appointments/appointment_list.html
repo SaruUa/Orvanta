@@ -3,23 +3,34 @@
 {% block title %}Записи{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Список записів</h1>
+<div class="app-page wide">
+    <header class="page-header">
+        <div>
+            <h1>Список записів</h1>
+            <p>Керуйте записами, статусами та фактичною вартістю.</p>
+        </div>
+        <div class="page-actions">
+            {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                <a href="{% url 'appointment_create' %}" class="btn btn-primary">Створити запис</a>
+            {% endif %}
+            <a
+                href="{% url 'appointment_export_csv' %}{% if query_string %}?{{ query_string }}{% endif %}"
+                class="btn btn-outline-secondary"
+            >
+                Експорт CSV
+            </a>
+        </div>
+    </header>
 
-<div class="mb-3 d-flex gap-2 flex-wrap">
-    <a href="{% url 'appointment_create' %}" class="btn btn-primary">Створити запис</a>
-    <a
-        href="{% url 'appointment_export_csv' %}{% if query_string %}?{{ query_string }}{% endif %}"
-        class="btn btn-outline-secondary"
-    >
-        Експорт CSV
-    </a>
-</div>
+    <section class="filter-card">
+        <div class="filter-card-header">
+            <div>
+                <h2 class="filter-card-title">Фільтрація</h2>
+                <p class="filter-card-subtitle">Звузьте список за датою, статусом або співробітником.</p>
+            </div>
+        </div>
 
-<div class="card filter-card mb-4">
-    <div class="card-body">
-        <h4 class="card-title mb-4">Фільтрація</h4>
-
-        <form method="get" class="filter-form">
+        <form method="get" class="filter-form appointment-filter-form">
             <p class="date-field">
                 {{ filter_form.appointment_date.label_tag }}
                 {{ filter_form.appointment_date }}
@@ -35,127 +46,147 @@
                 {{ filter_form.employee }}
             </p>
 
-            <div class="filter-form-actions">
-                <button type="submit" class="btn btn-primary btn-lg">Застосувати</button>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Застосувати</button>
+                <a href="{% url 'appointment_list' %}" class="btn btn-outline-secondary">Скинути</a>
             </div>
         </form>
-    </div>
-</div>
+    </section>
 
-{% if page_obj %}
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Клієнт</th>
-                    <th>Послуга</th>
-                    <th>Співробітник</th>
-                    <th>Дата</th>
-                    <th>Початок</th>
-                    <th>Кінець</th>
-                    <th>Фактична вартість</th>
-                    <th>Статус</th>
-                    <th>Дії</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for appointment in page_obj %}
+    {% if page_obj %}
+        <section class="table-card">
+            <div class="table-card-header">
+                <div>
+                    <h2>Записи</h2>
+                    <p>Показано {{ page_obj.start_index }}–{{ page_obj.end_index }} із {{ page_obj.paginator.count }}</p>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table app-table align-middle">
+                    <thead>
                     <tr>
-                        <td>{{ appointment.client }}</td>
-                        <td>{{ appointment.service }}</td>
-                        <td>{{ appointment.employee }}</td>
-                        <td>{{ appointment.appointment_date|date:'d.m.Y' }}</td>
-                        <td>{{ appointment.start_time|time:'H:i' }}</td>
-                        <td>{{ appointment.end_time|time:'H:i' }}</td>
-                        <td>
-                            {% if request.user.role != 'employee' %}
-                                <form
-                                    method="post"
-                                    action="{% url 'appointment_actual_price_update' appointment.pk %}"
-                                    class="d-flex gap-2 align-items-center flex-nowrap m-0"
-                                >
-                                    {% csrf_token %}
-                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                    <label for="actual-price-{{ appointment.pk }}" class="visually-hidden">
-                                        Фактична вартість
-                                    </label>
-                                    <input
-                                        id="actual-price-{{ appointment.pk }}"
-                                        type="number"
-                                        name="actual_price"
-                                        value="{{ appointment.actual_price|default_if_none:'' }}"
-                                        min="0"
-                                        step="0.01"
-                                        class="form-control form-control-sm actual-price-input"
-                                        placeholder="0.00"
-                                    >
-                                    <button type="submit" class="btn btn-sm btn-outline-success">
-                                        Зберегти
-                                    </button>
-                                </form>
-                            {% else %}
-                                {{ appointment.actual_price|default:'—' }}
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="status-badge status-{{ appointment.status }}">
-                                {{ appointment.get_status_display }}
-                            </span>
-                        </td>
-                        <td class="d-flex gap-2 flex-wrap">
-                            <a href="{% url 'appointment_detail' appointment.pk %}" class="btn btn-sm btn-outline-secondary">Перегляд</a>
-                            {% if request.user.role != 'employee' %}
-                                <a href="{% url 'appointment_update' appointment.pk %}" class="btn btn-sm btn-outline-primary">Редагувати</a>
-                            {% endif %}
-
-                            {% if request.user.role != 'employee' or appointment.employee_id == request.user.id %}
-                                {% if appointment.status != 'confirmed' %}
-                                    <form method="post" action="{% url 'appointment_quick_status_update' appointment.pk 'confirmed' %}" class="m-0">
-                                        {% csrf_token %}
-                                        <button
-                                            type="submit"
-                                            class="btn btn-sm btn-outline-warning"
-                                            onclick="return confirm('Підтвердити цей запис?');"
-                                        >
-                                            Підтвердити
-                                        </button>
-                                    </form>
-                                {% endif %}
-
-                                {% if appointment.status != 'cancelled' %}
-                                    <form method="post" action="{% url 'appointment_quick_status_update' appointment.pk 'cancelled' %}" class="m-0">
-                                        {% csrf_token %}
-                                        <button
-                                            type="submit"
-                                            class="btn btn-sm btn-outline-danger"
-                                            onclick="return confirm('Скасувати цей запис?');"
-                                        >
-                                            Скасувати
-                                        </button>
-                                    </form>
-                                {% endif %}
-
-                                {% if appointment.status != 'completed' %}
-                                    <form method="post" action="{% url 'appointment_quick_status_update' appointment.pk 'completed' %}" class="m-0">
-                                        {% csrf_token %}
-                                        <button
-                                            type="submit"
-                                            class="btn btn-sm btn-outline-success"
-                                            onclick="return confirm('Позначити запис як виконаний?');"
-                                        >
-                                            Виконано
-                                        </button>
-                                    </form>
-                                {% endif %}
-                            {% endif %}
-                        </td>
+                        <th>Клієнт</th>
+                        <th>Послуга</th>
+                        <th>Співробітник</th>
+                        <th>Дата і час</th>
+                        <th>Фактична вартість</th>
+                        <th>Статус</th>
+                        <th>Дії</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% include 'includes/pagination.html' %}
-{% else %}
-    <p>Записів за вибраними критеріями не знайдено.</p>
-{% endif %}
+                    </thead>
+                    <tbody>
+                    {% for appointment in page_obj %}
+                        <tr>
+                            <td><span class="cell-title">{{ appointment.client }}</span></td>
+                            <td>{{ appointment.service }}</td>
+                            <td>{{ appointment.employee }}</td>
+                            <td>
+                                <span class="cell-title">{{ appointment.appointment_date|date:'d.m.Y' }}</span>
+                                <span class="cell-subtitle">{{ appointment.start_time|time:'H:i' }}–{{ appointment.end_time|time:'H:i' }}</span>
+                            </td>
+                            <td>
+                                {% if request.user.role != 'employee' %}
+                                    <form
+                                        method="post"
+                                        action="{% url 'appointment_actual_price_update' appointment.pk %}"
+                                        class="actual-price-form"
+                                    >
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <label for="actual-price-{{ appointment.pk }}" class="visually-hidden">
+                                            Фактична вартість
+                                        </label>
+                                        <input
+                                            id="actual-price-{{ appointment.pk }}"
+                                            type="number"
+                                            name="actual_price"
+                                            value="{{ appointment.actual_price|default_if_none:'' }}"
+                                            min="0"
+                                            step="0.01"
+                                            class="form-control form-control-sm actual-price-input"
+                                            placeholder="0.00"
+                                        >
+                                        <button type="submit" class="btn btn-sm btn-outline-success btn-sm-action">
+                                            Зберегти
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    {{ appointment.actual_price|default:'—' }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="status-badge status-{{ appointment.status }}">
+                                    {{ appointment.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href="{% url 'appointment_detail' appointment.pk %}" class="btn btn-sm btn-outline-secondary btn-sm-action">Перегляд</a>
+                                    {% if request.user.role != 'employee' %}
+                                        <a href="{% url 'appointment_update' appointment.pk %}" class="btn btn-sm btn-outline-primary btn-sm-action">Редагувати</a>
+                                    {% endif %}
+
+                                    {% if request.user.role != 'employee' or appointment.employee_id == request.user.id %}
+                                        {% if appointment.status != 'confirmed' %}
+                                            <form method="post" action="{% url 'appointment_quick_status_update' appointment.pk 'confirmed' %}">
+                                                {% csrf_token %}
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-sm btn-outline-warning btn-sm-action"
+                                                    onclick="return confirm('Підтвердити цей запис?');"
+                                                >
+                                                    Підтвердити
+                                                </button>
+                                            </form>
+                                        {% endif %}
+
+                                        {% if appointment.status != 'cancelled' %}
+                                            <form method="post" action="{% url 'appointment_quick_status_update' appointment.pk 'cancelled' %}">
+                                                {% csrf_token %}
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-sm btn-outline-danger btn-sm-action"
+                                                    onclick="return confirm('Скасувати цей запис?');"
+                                                >
+                                                    Скасувати
+                                                </button>
+                                            </form>
+                                        {% endif %}
+
+                                        {% if appointment.status != 'completed' %}
+                                            <form method="post" action="{% url 'appointment_quick_status_update' appointment.pk 'completed' %}">
+                                                {% csrf_token %}
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-sm btn-outline-success btn-sm-action"
+                                                    onclick="return confirm('Позначити запис як виконаний?');"
+                                                >
+                                                    Виконано
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% include 'includes/pagination.html' %}
+        </section>
+    {% else %}
+        <section class="table-empty-state">
+            <strong>Записів поки немає</strong>
+            <span>Створіть перший запис для клієнта або змініть фільтри.</span>
+            {% if request.user.role == 'admin' or request.user.role == 'manager' %}
+                <div class="empty-state-actions">
+                    <a href="{% url 'appointment_create' %}" class="btn btn-primary">Створити запис</a>
+                </div>
+            {% endif %}
+        </section>
+    {% endif %}
+</div>
 {% endblock %}
