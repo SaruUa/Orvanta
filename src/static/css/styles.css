@@ -2337,9 +2337,9 @@ body {
 .auth-logo-corner {
     flex: 0 0 auto;
     display: block;
-    width: 160px;
-    height: 52px;
-    margin: -0.35rem -0.25rem 0 0;
+    width: 285px;
+    height: 70px;
+    margin: -0.40rem -5.0rem 0 0;
     object-fit: cover;
     object-position: center;
 }
@@ -2355,8 +2355,8 @@ body {
 
 .auth-logo {
     display: block;
-    width: min(100%, 340px);
-    height: 102px;
+    width: min(100%, 400px);
+    height: 120px;
     object-fit: cover;
     object-position: center;
 }
@@ -2677,14 +2677,14 @@ body {
     }
 
     .auth-logo-corner {
-        width: 132px;
-        height: 42px;
+        width: 147px;
+        height: 47px;
         margin-top: -0.25rem;
     }
 
     .auth-logo {
-        width: min(100%, 280px);
-        height: 84px;
+        width: min(100%, 320px);
+        height: 96px;
     }
 
     .auth-card-heading h2 {
