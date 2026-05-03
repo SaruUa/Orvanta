@@ -3,114 +3,134 @@
 {% block title %}Профіль{% endblock %}
 
 {% block content %}
-<div class="app-page">
+<div class="app-page profile-page">
     <header class="page-header">
         <div>
-            <h1>Мій профіль</h1>
-            <p>Персональні дані користувача, роль і прив’язка до організації.</p>
-        </div>
-        <div class="page-actions">
-            <a href="{% url 'profile_password_change' %}" class="btn btn-outline-secondary">Змінити пароль</a>
+            <h1>Профіль користувача</h1>
+            <p>Переглядайте дані облікового запису та налаштування вашої організації.</p>
         </div>
     </header>
 
-    <div class="row g-4 profile-grid">
-        <div class="col-xl-6">
-            <div class="card profile-card h-100">
-                <div class="card-body">
-                    <h2 class="h5 mb-3">Основна інформація</h2>
-                    <dl class="row mb-0">
-                    <dt class="col-sm-5">Ім’я користувача</dt>
-                    <dd class="col-sm-7">{{ request.user.username }}</dd>
-
-                    <dt class="col-sm-5">Email</dt>
-                    <dd class="col-sm-7">{{ request.user.email|default:'—' }}</dd>
-
-                    <dt class="col-sm-5">Роль</dt>
-                    <dd class="col-sm-7">{{ request.user.get_role_display }}</dd>
-
-                    <dt class="col-sm-5">Організація</dt>
-                    <dd class="col-sm-7">
-                        {% if request.user.organization %}
-                            {{ request.user.organization.name }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </dd>
-
-                    <dt class="col-sm-5">Дата реєстрації</dt>
-                    <dd class="col-sm-7">{{ request.user.date_joined|date:'d.m.Y H:i' }}</dd>
-
-                    <dt class="col-sm-5">Останній вхід</dt>
-                    <dd class="col-sm-7">{{ request.user.last_login|date:'d.m.Y H:i'|default:'—' }}</dd>
-
-                    <dt class="col-sm-5">Активний</dt>
-                    <dd class="col-sm-7">
-                        {% if request.user.is_active %}
-                            <span class="badge-soft badge-soft-success">Активний</span>
-                        {% else %}
-                            <span class="badge-soft badge-soft-muted">Неактивний</span>
-                        {% endif %}
-                    </dd>
-                    </dl>
+    <section class="profile-hero-card">
+        <div class="profile-identity">
+            <span class="profile-avatar">{{ request.user.username|slice:":1"|upper }}</span>
+            <div>
+                <h2>{{ request.user.username }}</h2>
+                <p>{{ request.user.email|default:'Email не вказано' }}</p>
+                <div class="profile-meta-row">
+                    <span class="badge-soft role-{{ request.user.role }}">{{ request.user.get_role_display }}</span>
+                    {% if organization %}
+                        <span>{{ organization.name }}</span>
+                    {% else %}
+                        <span>Організацію не вказано</span>
+                    {% endif %}
                 </div>
             </div>
         </div>
+        <div class="profile-joined">
+            <span>Дата реєстрації</span>
+            <strong>{{ request.user.date_joined|date:'d.m.Y H:i' }}</strong>
+        </div>
+    </section>
 
-        <div class="col-xl-6">
-            <div class="card profile-card h-100">
+    <div class="profile-layout">
+        <section class="card profile-card">
+            <div class="card-body">
+                <div class="profile-card-header">
+                    <div>
+                        <h2>Контактні дані</h2>
+                        <p>Email використовується для службової інформації та ідентифікації користувача.</p>
+                    </div>
+                </div>
+
+                <form method="post" class="app-form profile-email-form">
+                    {% csrf_token %}
+                    {% include 'includes/form_fields.html' with form=profile_form %}
+                    <div class="form-actions">
+                        <button type="submit" name="profile_submit" class="btn btn-primary">Зберегти зміни</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <aside class="profile-side-stack">
+            <section class="card profile-card">
                 <div class="card-body">
-                    <h2 class="h5 mb-3">Редагування профілю</h2>
-
-                    <form method="post" class="app-form">
-                        {% csrf_token %}
-                        {% include 'includes/form_fields.html' with form=profile_form %}
-                        <div class="form-actions">
-                            <button type="submit" name="profile_submit" class="btn btn-primary">Зберегти</button>
-                            <a href="{% url 'profile_password_change' %}" class="btn btn-outline-secondary">Змінити пароль</a>
+                    <div class="profile-card-header">
+                        <div>
+                            <h2>Організація</h2>
+                            <p>Робочий простір, до якого прив’язаний ваш обліковий запис.</p>
                         </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+                    </div>
 
-        <div class="col-12">
-            <div class="card profile-card">
+                    <div class="profile-detail-list">
+                        <div class="profile-detail-row">
+                            <span>Назва організації</span>
+                            <strong>{% if organization %}{{ organization.name }}{% else %}—{% endif %}</strong>
+                        </div>
+                        <div class="profile-detail-row">
+                            <span>Ідентифікатор організації</span>
+                            <strong>{% if organization %}{{ organization.slug }}{% else %}—{% endif %}</strong>
+                        </div>
+                        <div class="profile-detail-row">
+                            <span>Роль в організації</span>
+                            <strong>
+                                <span class="badge-soft role-{{ request.user.role }}">
+                                    {{ request.user.get_role_display }}
+                                </span>
+                            </strong>
+                        </div>
+                    </div>
+
+                    {% if can_edit_organization %}
+                        <div class="profile-card-actions">
+                            <a href="{% url 'organization_settings' %}" class="btn btn-outline-primary">
+                                Налаштування організації
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="card profile-card">
                 <div class="card-body">
-                    <h2 class="h5 mb-3">Організація</h2>
-
-                <dl class="row mb-3">
-                    <dt class="col-sm-3">Назва</dt>
-                    <dd class="col-sm-9">
-                        {% if organization %}
-                            {{ organization.name }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </dd>
-
-                    <dt class="col-sm-3">Slug</dt>
-                    <dd class="col-sm-9">
-                        {% if organization %}
-                            {{ organization.slug }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </dd>
-                </dl>
-
-                {% if can_edit_organization %}
-                    <a href="{% url 'organization_settings' %}" class="btn btn-outline-primary">
-                        Перейти до налаштувань організації
-                    </a>
-                {% else %}
-                    <p class="text-muted mb-0">
-                        Редагування назви організації доступне лише адміністратору організації.
-                    </p>
-                {% endif %}
+                    <div class="profile-card-header">
+                        <div>
+                            <h2>Безпека</h2>
+                            <p>Пароль можна змінити через меню користувача у верхній панелі.</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </section>
+
+            <section class="card profile-card">
+                <div class="card-body">
+                    <div class="profile-card-header">
+                        <div>
+                            <h2>Службова інформація</h2>
+                            <p>Стан облікового запису у системі.</p>
+                        </div>
+                    </div>
+
+                    <div class="profile-detail-list">
+                        <div class="profile-detail-row">
+                            <span>Останній вхід</span>
+                            <strong>{{ request.user.last_login|date:'d.m.Y H:i'|default:'—' }}</strong>
+                        </div>
+                        <div class="profile-detail-row">
+                            <span>Активність</span>
+                            <strong>
+                                {% if request.user.is_active %}
+                                    <span class="badge-soft badge-soft-success">Активний</span>
+                                {% else %}
+                                    <span class="badge-soft badge-soft-muted">Неактивний</span>
+                                {% endif %}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </aside>
     </div>
 </div>
 {% endblock %}

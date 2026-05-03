@@ -191,6 +191,8 @@ class UserProfileTests(TestCase):
         response = self.client.get(reverse('profile'))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Профіль користувача')
+        self.assertContains(response, 'Контактні дані')
         self.assertContains(response, self.user.username)
         self.assertContains(response, self.organization.name)
 
@@ -525,7 +527,7 @@ class OrganizationSettingsTests(TestCase):
         self.client.force_login(self.admin_user)
         admin_response = self.client.get(reverse('profile'))
         self.assertContains(admin_response, reverse('organization_settings'))
-        self.assertContains(admin_response, 'Перейти до налаштувань організації')
+        self.assertContains(admin_response, 'Налаштування організації')
         self.assertNotContains(admin_response, 'Оновити назву організації')
 
         self.client.force_login(self.manager_user)
