@@ -186,7 +186,7 @@ class OrganizationAuthenticationForm(AuthenticationForm):
         self.fields['username'].label = 'Ім’я користувача'
         self.fields['username'].widget.attrs.setdefault('placeholder', 'username')
         self.fields['password'].label = 'Пароль'
-        self.fields['password'].widget.attrs.setdefault('placeholder', 'Пароль')
+        self.fields['password'].widget.attrs.setdefault('placeholder', 'password')
         self.fields['organization'].widget.attrs.setdefault('placeholder', 'slug або назва')
 
         for field in self.fields.values():

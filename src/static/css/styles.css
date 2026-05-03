@@ -2237,7 +2237,7 @@ body {
 }
 
 .auth-promo h1 {
-    margin: 1.35rem 0 0.85rem;
+    margin: 0 0 0.85rem;
     color: #ffffff;
     font-size: clamp(2.6rem, 5vw, 4.5rem);
     font-weight: 800;
@@ -2303,11 +2303,45 @@ body {
     border-radius: 1.65rem;
     background: rgba(255, 255, 255, 0.98);
     box-shadow: 0 1.5rem 4rem rgba(2, 6, 23, 0.32);
-    animation: fadeUp 0.35s ease;
 }
 
 .auth-card-wide {
     max-width: 500px;
+}
+
+.auth-login-topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.55rem;
+}
+
+.auth-login-topbar .auth-card-heading {
+    flex: 1 1 auto;
+    margin-bottom: 0;
+    padding-top: 0.25rem;
+    text-align: left;
+}
+
+.auth-login-topbar .auth-card-heading h2 {
+    font-size: 1.72rem;
+}
+
+.auth-login-topbar .auth-card-heading p {
+    max-width: 20rem;
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.auth-logo-corner {
+    flex: 0 0 auto;
+    display: block;
+    width: 160px;
+    height: 52px;
+    margin: -0.35rem -0.25rem 0 0;
+    object-fit: cover;
+    object-position: center;
 }
 
 .auth-brand {
@@ -2384,6 +2418,48 @@ body {
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 
+.password-field {
+    position: relative;
+    display: block;
+}
+
+.auth-page .password-field input {
+    padding-right: 6.7rem;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.55rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 5.2rem;
+    min-height: 2.05rem;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid #dbeafe;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1;
+    transform: translateY(-50%);
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+    border-color: #bfdbfe;
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid rgba(37, 99, 235, 0.28);
+    outline-offset: 2px;
+}
+
 .auth-page .login-form textarea {
     min-height: 7rem;
 }
@@ -2429,6 +2505,21 @@ body {
     border-color: #1e40af;
 }
 
+.login-submit.is-loading {
+    gap: 0.55rem;
+    cursor: wait;
+    opacity: 0.9;
+}
+
+.button-spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: authSpin 0.8s linear infinite;
+}
+
 .login-alert,
 .auth-page .form-alert {
     border-radius: 0.95rem;
@@ -2450,6 +2541,53 @@ body {
 .auth-switch a:hover {
     color: #1e40af;
     text-decoration: underline;
+}
+
+.auth-page.auth-enhanced .auth-promo,
+.auth-page.auth-enhanced .auth-card,
+.auth-page.auth-enhanced .auth-feature-item {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.48s ease, transform 0.48s ease;
+}
+
+.auth-page.auth-enhanced.is-ready .auth-promo,
+.auth-page.auth-enhanced.is-ready .auth-card,
+.auth-page.auth-enhanced.is-ready .auth-feature-item {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.auth-page.auth-enhanced.is-ready .auth-card {
+    transition-delay: 0.08s;
+}
+
+.auth-page.auth-enhanced.is-ready .auth-feature-item:nth-child(2) {
+    transition-delay: 0.08s;
+}
+
+.auth-page.auth-enhanced.is-ready .auth-feature-item:nth-child(3) {
+    transition-delay: 0.14s;
+}
+
+@keyframes authSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-page.auth-enhanced .auth-promo,
+    .auth-page.auth-enhanced .auth-card,
+    .auth-page.auth-enhanced .auth-feature-item {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .button-spinner {
+        animation: none;
+    }
 }
 
 @media (max-width: 992px) {
@@ -2499,7 +2637,7 @@ body {
     }
 
     .auth-promo h1 {
-        margin-top: 0.9rem;
+        margin-top: 0;
         font-size: 2.35rem;
     }
 
@@ -2519,6 +2657,29 @@ body {
     .auth-card {
         padding: 1.35rem;
         border-radius: 1.25rem;
+    }
+
+    .auth-login-topbar {
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .auth-login-topbar .auth-card-heading {
+        padding-top: 0;
+    }
+
+    .auth-login-topbar .auth-card-heading h2 {
+        font-size: 1.32rem;
+    }
+
+    .auth-login-topbar .auth-card-heading p {
+        font-size: 0.9rem;
+    }
+
+    .auth-logo-corner {
+        width: 132px;
+        height: 42px;
+        margin-top: -0.25rem;
     }
 
     .auth-logo {
