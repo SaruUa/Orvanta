@@ -56,6 +56,93 @@
                 </form>
             </div>
         </section>
+
+        <section class="card form-card organization-settings-card">
+            <div class="card-body">
+                <h2 class="h5 mb-2 text-danger">Небезпечна зона</h2>
+                <p class="text-muted">
+                    Видалення організації прибирає весь робочий простір і не може бути скасоване.
+                </p>
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteOrganizationModal"
+                >
+                    Видалити організацію
+                </button>
+            </div>
+        </section>
     </div>
 </div>
+
+<div class="modal fade" id="deleteOrganizationModal" tabindex="-1" aria-labelledby="deleteOrganizationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5 text-danger" id="deleteOrganizationModalLabel">Видалення організації</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрити"></button>
+            </div>
+            <form method="post" action="{% url 'organization_delete' %}" data-disable-on-submit>
+                {% csrf_token %}
+                <div class="modal-body">
+                    {% if delete_organization_form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ delete_organization_form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <p class="fw-semibold text-danger">
+                        This action will permanently delete the organization and ALL associated data.
+                    </p>
+                    <p class="mb-2">Наслідки видалення:</p>
+                    <ul class="mb-3">
+                        <li>users</li>
+                        <li>clients</li>
+                        <li>services</li>
+                        <li>appointments</li>
+                        <li>audit logs</li>
+                    </ul>
+
+                    {% for field in delete_organization_form %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">{{ field.errors }}</div>
+                            {% endif %}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+                    <button type="submit" class="btn btn-danger">Підтвердити видалення</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        {% if open_delete_organization_modal %}
+            const modalElement = document.getElementById('deleteOrganizationModal');
+            if (modalElement && window.bootstrap) {
+                new bootstrap.Modal(modalElement).show();
+            }
+        {% endif %}
+
+        document.querySelectorAll('form[data-disable-on-submit]').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                form.querySelectorAll('button[type="submit"]').forEach(function (button) {
+                    button.disabled = true;
+                });
+            });
+        });
+    });
+</script>
 {% endblock %}

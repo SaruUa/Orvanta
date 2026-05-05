@@ -1,5 +1,13 @@
+from datetime import date, time
+from decimal import Decimal
+
 from django.test import TestCase
 from django.urls import reverse
+
+from appointments.models import Appointment
+from audit.models import AuditActionType, AuditEntityType, AuditLog
+from clients.models import Client
+from services_catalog.models import Service, ServiceCategory
 
 from .models import Organization, User, UserRole
 
@@ -535,6 +543,121 @@ class OrganizationSettingsTests(TestCase):
         self.assertNotContains(manager_response, reverse('organization_settings'))
         self.assertNotContains(manager_response, 'Оновити назву організації')
 
+    def test_admin_can_delete_organization_with_correct_credentials(self):
+        client_record = Client.objects.create(
+            full_name='Delete Org Client',
+            phone='+380500000001',
+            organization=self.organization,
+            created_by=self.admin_user,
+        )
+        category = ServiceCategory.objects.create(
+            name='Delete Org Category',
+            organization=self.organization,
+        )
+        service = Service.objects.create(
+            name='Delete Org Service',
+            price=Decimal('120.00'),
+            duration_minutes=60,
+            category=category,
+            organization=self.organization,
+        )
+        appointment = Appointment.objects.create(
+            client=client_record,
+            service=service,
+            employee=self.employee_user,
+            created_by=self.admin_user,
+            appointment_date=date(2026, 5, 6),
+            start_time=time(9, 0),
+            end_time=time(10, 0),
+            organization=self.organization,
+        )
+        audit_log = AuditLog.objects.create(
+            user=self.admin_user,
+            organization=self.organization,
+            action_type=AuditActionType.UPDATE,
+            entity_type=AuditEntityType.USER,
+            entity_id=self.admin_user.pk,
+            description='Organization deletion fixture.',
+        )
+
+        other_admin_pk = self.other_admin_user.pk
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse('organization_delete'),
+            data={
+                'username': 'settings_admin',
+                'organization': 'org-one',
+                'password': 'StrongPass123!',
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('login'))
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
+        self.assertNotIn('_auth_user_id', self.client.session)
+        self.assertFalse(Organization.objects.filter(pk=self.organization.pk).exists())
+        self.assertFalse(User.objects.filter(pk=self.admin_user.pk).exists())
+        self.assertFalse(User.objects.filter(pk=self.manager_user.pk).exists())
+        self.assertFalse(User.objects.filter(pk=self.employee_user.pk).exists())
+        self.assertTrue(User.objects.filter(pk=other_admin_pk).exists())
+        self.assertFalse(Client.objects.filter(pk=client_record.pk).exists())
+        self.assertFalse(ServiceCategory.objects.filter(pk=category.pk).exists())
+        self.assertFalse(Service.objects.filter(pk=service.pk).exists())
+        self.assertFalse(Appointment.objects.filter(pk=appointment.pk).exists())
+        self.assertFalse(AuditLog.objects.filter(pk=audit_log.pk).exists())
+
+    def test_organization_delete_fails_with_wrong_password(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse('organization_delete'),
+            data={
+                'username': 'settings_admin',
+                'organization': 'org-one',
+                'password': 'WrongPass123!',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Пароль не підтверджено.')
+        self.assertTrue(Organization.objects.filter(pk=self.organization.pk).exists())
+        self.assertTrue(User.objects.filter(pk=self.admin_user.pk).exists())
+
+    def test_organization_delete_fails_with_wrong_org_name(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse('organization_delete'),
+            data={
+                'username': 'settings_admin',
+                'organization': 'org-two',
+                'password': 'StrongPass123!',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Назва або slug організації не збігається.')
+        self.assertTrue(Organization.objects.filter(pk=self.organization.pk).exists())
+        self.assertTrue(Organization.objects.filter(pk=self.other_organization.pk).exists())
+
+    def test_organization_delete_fails_for_non_admin(self):
+        self.client.force_login(self.manager_user)
+
+        response = self.client.post(
+            reverse('organization_delete'),
+            data={
+                'username': 'settings_manager',
+                'organization': 'org-one',
+                'password': 'StrongPass123!',
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('home'))
+        self.assertContains(response, 'У вас немає прав доступу до цієї сторінки.')
+        self.assertTrue(Organization.objects.filter(pk=self.organization.pk).exists())
+
 
 class NavigationUiTests(TestCase):
     def setUp(self):
@@ -608,6 +731,93 @@ class NavigationUiTests(TestCase):
             self.assertNotContains(response, 'Налаштування організації')
             self.assertNotContains(response, reverse('organization_settings'))
             self.client.logout()
+
+
+class UserDeleteTests(TestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(name='Delete Users Org', slug='delete-users-org')
+        self.other_organization = Organization.objects.create(
+            name='Other Delete Users Org',
+            slug='other-delete-users-org',
+        )
+        self.admin_user = User.objects.create_user(
+            username='delete_admin',
+            email='delete_admin@example.com',
+            password='StrongPass123!',
+            role=UserRole.ADMIN,
+            organization=self.organization,
+        )
+        self.second_admin = User.objects.create_user(
+            username='delete_second_admin',
+            email='delete_second_admin@example.com',
+            password='StrongPass123!',
+            role=UserRole.ADMIN,
+            organization=self.organization,
+        )
+        self.employee_user = User.objects.create_user(
+            username='delete_employee',
+            email='delete_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.organization,
+        )
+        self.other_user = User.objects.create_user(
+            username='delete_other_employee',
+            email='delete_other_employee@example.com',
+            password='StrongPass123!',
+            role=UserRole.EMPLOYEE,
+            organization=self.other_organization,
+        )
+
+    def test_admin_can_delete_user_in_same_organization(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse('user_delete', args=[self.employee_user.pk]),
+            data={'confirm': '1'},
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse('user_list'))
+        self.assertFalse(User.objects.filter(pk=self.employee_user.pk).exists())
+        self.assertContains(response, 'Користувача delete_employee успішно видалено.')
+
+    def test_admin_cannot_delete_user_from_another_organization(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse('user_delete', args=[self.other_user.pk]),
+            data={'confirm': '1'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(User.objects.filter(pk=self.other_user.pk).exists())
+        self.assertContains(response, 'Користувача не знайдено в межах вашої організації.')
+
+    def test_admin_cannot_delete_self(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse('user_delete', args=[self.admin_user.pk]),
+            data={'confirm': '1'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(User.objects.filter(pk=self.admin_user.pk).exists())
+        self.assertContains(response, 'Ви не можете видалити власний обліковий запис.')
+
+    def test_admin_cannot_delete_last_admin(self):
+        self.second_admin.delete()
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse('user_delete', args=[self.admin_user.pk]),
+            data={'confirm': '1'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(User.objects.filter(pk=self.admin_user.pk).exists())
+        self.assertContains(response, 'Неможливо видалити останнього адміністратора організації.')
 
 
 class UserListPaginationTests(TestCase):

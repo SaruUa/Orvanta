@@ -1,7 +1,8 @@
 from django.contrib import messages
-from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import ProtectedError
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
@@ -10,6 +11,8 @@ from django.views.decorators.http import require_POST
 
 from .decorators import admin_required
 from .forms import (
+    ConfirmDeleteOrganizationForm,
+    ConfirmDeleteUserForm,
     OrganizationSettingsForm,
     OrganizationUserCreateForm,
     ProfilePasswordChangeForm,
@@ -25,6 +28,68 @@ USERS_PAGE_SIZE = 10
 
 def _organization_users_queryset(user):
     return User.objects.filter(organization=user.organization).order_by('username')
+
+
+def _get_user_list_context(request, extra_context=None):
+    users = _organization_users_queryset(request.user)
+    filter_form = UserFilterForm(request.GET or None)
+
+    if filter_form.is_valid():
+        query = filter_form.cleaned_data.get('query')
+        role = filter_form.cleaned_data.get('role')
+        is_active = filter_form.cleaned_data.get('is_active')
+
+        if query:
+            users = users.filter(
+                Q(username__icontains=query) |
+                Q(email__icontains=query)
+            )
+
+        if role:
+            users = users.filter(role=role)
+
+        if is_active == 'true':
+            users = users.filter(is_active=True)
+        elif is_active == 'false':
+            users = users.filter(is_active=False)
+
+    query_params = request.GET.copy()
+    query_params.pop('page', None)
+    page_obj = Paginator(users, USERS_PAGE_SIZE).get_page(request.GET.get('page'))
+
+    context = {
+        'users': page_obj,
+        'filter_form': filter_form,
+        'page_obj': page_obj,
+        'query_string': query_params.urlencode(),
+    }
+    if extra_context:
+        context.update(extra_context)
+    return context
+
+
+def _render_user_list(request, extra_context=None, status=200):
+    return render(
+        request,
+        'users/user_list.html',
+        _get_user_list_context(request, extra_context=extra_context),
+        status=status,
+    )
+
+
+def _get_organization_settings_context(
+    organization,
+    form,
+    delete_form=None,
+    open_delete_organization_modal=False,
+):
+    return {
+        'form': form,
+        'delete_organization_form': delete_form or ConfirmDeleteOrganizationForm(),
+        'open_delete_organization_modal': open_delete_organization_modal,
+        'organization': organization,
+        'users_count': User.objects.filter(organization=organization).count(),
+    }
 
 
 def _generate_unique_organization_slug(name):
@@ -74,43 +139,7 @@ def signup_view(request):
 
 @admin_required
 def user_list_view(request):
-    users = _organization_users_queryset(request.user)
-
-    filter_form = UserFilterForm(request.GET or None)
-
-    if filter_form.is_valid():
-        query = filter_form.cleaned_data.get('query')
-        role = filter_form.cleaned_data.get('role')
-        is_active = filter_form.cleaned_data.get('is_active')
-
-        if query:
-            users = users.filter(
-                Q(username__icontains=query) |
-                Q(email__icontains=query)
-            )
-
-        if role:
-            users = users.filter(role=role)
-
-        if is_active == 'true':
-            users = users.filter(is_active=True)
-        elif is_active == 'false':
-            users = users.filter(is_active=False)
-
-    query_params = request.GET.copy()
-    query_params.pop('page', None)
-    page_obj = Paginator(users, USERS_PAGE_SIZE).get_page(request.GET.get('page'))
-
-    return render(
-        request,
-        'users/user_list.html',
-        {
-            'users': page_obj,
-            'filter_form': filter_form,
-            'page_obj': page_obj,
-            'query_string': query_params.urlencode(),
-        },
-    )
+    return _render_user_list(request)
 
 
 @admin_required
@@ -165,6 +194,45 @@ def user_toggle_active_view(request, pk):
         messages.success(request, 'Користувача успішно деактивовано.')
 
     return redirect('user_list')
+
+
+@admin_required
+@require_POST
+def user_delete_view(request, pk):
+    target_user = User.objects.filter(pk=pk).select_related('organization').first()
+    form = ConfirmDeleteUserForm(
+        request.POST,
+        actor=request.user,
+        target_user=target_user,
+    )
+
+    if form.is_valid():
+        username = target_user.username
+        try:
+            form.delete()
+        except ProtectedError:
+            form.add_error(
+                None,
+                'Користувача не можна видалити, доки з ним пов’язані захищені записи.',
+            )
+        else:
+            messages.success(request, f'Користувача {username} успішно видалено.')
+            return redirect('user_list')
+
+    visible_target = target_user
+    if target_user is None or target_user.organization_id != request.user.organization_id:
+        visible_target = None
+        messages.error(request, 'Користувача не знайдено в межах вашої організації.')
+
+    modal_id = f'deleteUserModal{visible_target.pk}' if visible_target is not None else ''
+    return _render_user_list(
+        request,
+        {
+            'delete_user_form': form,
+            'delete_user_target': visible_target,
+            'open_delete_user_modal_id': modal_id,
+        },
+    )
 
 
 @admin_required
@@ -272,9 +340,35 @@ def organization_settings_view(request):
     return render(
         request,
         'users/organization_settings.html',
-        {
-            'form': form,
-            'organization': organization,
-            'users_count': User.objects.filter(organization=organization).count(),
-        },
+        _get_organization_settings_context(organization, form),
+    )
+
+
+@admin_required
+@require_POST
+def organization_delete_view(request):
+    organization = request.user.organization
+    if organization is None:
+        messages.error(request, 'Ваш користувач не прив’язаний до організації.')
+        return redirect('profile')
+
+    settings_form = OrganizationSettingsForm(instance=organization)
+    delete_form = ConfirmDeleteOrganizationForm(request.POST, user=request.user)
+
+    if delete_form.is_valid():
+        organization_name = organization.name
+        logout(request)
+        delete_form.delete()
+        messages.success(request, f'Організацію "{organization_name}" успішно видалено.')
+        return redirect('login')
+
+    return render(
+        request,
+        'users/organization_settings.html',
+        _get_organization_settings_context(
+            organization,
+            settings_form,
+            delete_form=delete_form,
+            open_delete_organization_modal=True,
+        ),
     )

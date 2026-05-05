@@ -105,7 +105,58 @@
                                             <button type="submit" class="btn btn-sm btn-outline-success btn-sm-action">Активувати</button>
                                         {% endif %}
                                     </form>
+                                    {% if request.user.role == 'admin' %}
+                                        {% if user_obj.pk == request.user.pk %}
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-sm-action" disabled>Видалити</button>
+                                        {% else %}
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-danger btn-sm-action"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteUserModal{{ user_obj.pk }}"
+                                            >
+                                                Видалити
+                                            </button>
+                                        {% endif %}
+                                    {% endif %}
                                 </div>
+
+                                {% if request.user.role == 'admin' %}
+                                    <div class="modal fade" id="deleteUserModal{{ user_obj.pk }}" tabindex="-1" aria-labelledby="deleteUserModalLabel{{ user_obj.pk }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h2 class="modal-title fs-5" id="deleteUserModalLabel{{ user_obj.pk }}">Видалення користувача</h2>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрити"></button>
+                                                </div>
+                                                <form method="post" action="{% url 'user_delete' user_obj.pk %}" data-disable-on-submit>
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="confirm" value="1">
+                                                    <div class="modal-body">
+                                                        {% if delete_user_target and delete_user_target.pk == user_obj.pk and delete_user_form.non_field_errors %}
+                                                            <div class="alert alert-danger" role="alert">
+                                                                {{ delete_user_form.non_field_errors }}
+                                                            </div>
+                                                        {% endif %}
+                                                        <p class="fw-semibold text-danger mb-2">This action will permanently delete the user.</p>
+                                                        <p class="mb-2">
+                                                            Користувач: <strong>{{ user_obj.username }}</strong>
+                                                        </p>
+                                                        <p class="mb-0 text-muted">
+                                                            Записи, у яких цей користувач призначений співробітником, блокують видалення.
+                                                            Журнал аудиту й записи, створені цим користувачем, залишаються; посилання на користувача
+                                                            очищується там, де це дозволяє модель даних.
+                                                        </p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Скасувати</button>
+                                                        <button type="submit" class="btn btn-danger">Підтвердити видалення</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
@@ -125,4 +176,24 @@
         </section>
     {% endif %}
 </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalId = '{{ open_delete_user_modal_id|default:"" }}';
+        if (modalId && window.bootstrap) {
+            const modalElement = document.getElementById(modalId);
+            if (modalElement) {
+                new bootstrap.Modal(modalElement).show();
+            }
+        }
+
+        document.querySelectorAll('form[data-disable-on-submit]').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                form.querySelectorAll('button[type="submit"]').forEach(function (button) {
+                    button.disabled = true;
+                });
+            });
+        });
+    });
+</script>
 {% endblock %}

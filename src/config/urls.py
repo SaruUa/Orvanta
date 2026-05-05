@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
+from django_ratelimit.decorators import ratelimit
 
 from .views import (
     admin_dashboard_view,
@@ -10,12 +11,25 @@ from .views import (
 )
 from users.forms import OrganizationAuthenticationForm
 from users.views import (
+    organization_delete_view,
     organization_settings_view,
     profile_password_change_view,
     profile_view,
     signup_view,
 )
 
+
+login_view = ratelimit(
+    key='ip',
+    rate='5/m',
+    method='POST',
+    block=True,
+)(
+    auth_views.LoginView.as_view(
+        template_name='registration/login.html',
+        authentication_form=OrganizationAuthenticationForm,
+    )
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -30,10 +44,7 @@ urlpatterns = [
     ),
     path(
         'login/',
-        auth_views.LoginView.as_view(
-            template_name='registration/login.html',
-            authentication_form=OrganizationAuthenticationForm,
-        ),
+        login_view,
         name='login',
     ),
     path('signup/', signup_view, name='signup'),
@@ -41,6 +52,7 @@ urlpatterns = [
     path('profile/', profile_view, name='profile'),
     path('profile/password/', profile_password_change_view, name='profile_password_change'),
     path('settings/organization/', organization_settings_view, name='organization_settings'),
+    path('settings/organization/delete/', organization_delete_view, name='organization_delete'),
     path('organization/settings/', organization_settings_view),
     path('clients/', include('clients.urls')),
     path('services/', include('services_catalog.urls')),
