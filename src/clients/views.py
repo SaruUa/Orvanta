@@ -11,12 +11,13 @@ from config.csv_export import (
     format_csv_datetime,
 )
 from config.utils import filtered_paginated_response
+from django.conf import settings
 from users.decorators import manager_or_admin_required, organization_required
 
 from .forms import ClientFilterForm, ClientForm
 from .models import Client
 
-CLIENTS_PAGE_SIZE = 10
+CLIENTS_PAGE_SIZE = settings.PAGINATION_PAGE_SIZE
 
 
 def _organization_clients_queryset(user):

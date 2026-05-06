@@ -196,6 +196,69 @@ def _decimal_or_zero(value):
     return (value or Decimal('0.00')).quantize(Decimal('0.01'))
 
 
+def _month_revenue(base_queryset, year, month):
+    import calendar
+    last_day = calendar.monthrange(year, month)[1]
+    from datetime import date
+    qs = base_queryset.filter(
+        appointment_date__gte=date(year, month, 1),
+        appointment_date__lte=date(year, month, last_day),
+        actual_price__isnull=False,
+        status=AppointmentStatus.COMPLETED,
+    )
+    totals = qs.aggregate(
+        total_revenue=Sum('actual_price'),
+        average_check=Avg('actual_price'),
+        count=Count('id'),
+    )
+    return {
+        'total_revenue': _decimal_or_zero(totals['total_revenue']),
+        'average_check': _decimal_or_zero(totals['average_check']),
+        'count': totals['count'] or 0,
+    }
+
+
+def _pct_change(current, previous):
+    if previous == 0:
+        return None
+    change = ((current - previous) / previous * 100).quantize(Decimal('0.1'))
+    return change
+
+
+def get_month_comparison(user):
+    if user.organization_id is None:
+        return None
+
+    today = timezone.localdate()
+    cur_year, cur_month = today.year, today.month
+
+    if cur_month == 1:
+        prev_year, prev_month = cur_year - 1, 12
+    else:
+        prev_year, prev_month = cur_year, cur_month - 1
+
+    base_qs = _base_finance_queryset(user)
+    current = _month_revenue(base_qs, cur_year, cur_month)
+    previous = _month_revenue(base_qs, prev_year, prev_month)
+
+    import calendar
+    MONTHS_UK = {
+        1: 'Січень', 2: 'Лютий', 3: 'Березень', 4: 'Квітень',
+        5: 'Травень', 6: 'Червень', 7: 'Липень', 8: 'Серпень',
+        9: 'Вересень', 10: 'Жовтень', 11: 'Листопад', 12: 'Грудень',
+    }
+
+    return {
+        'current_label': f"{MONTHS_UK[cur_month]} {cur_year}",
+        'previous_label': f"{MONTHS_UK[prev_month]} {prev_year}",
+        'current': current,
+        'previous': previous,
+        'revenue_change': _pct_change(current['total_revenue'], previous['total_revenue']),
+        'avg_check_change': _pct_change(current['average_check'], previous['average_check']),
+        'count_change': _pct_change(Decimal(current['count']), Decimal(previous['count'])),
+    }
+
+
 def _finance_filter_data(query_params):
     data = query_params.copy()
     if not data.get('status'):
@@ -429,6 +492,7 @@ def finance_analytics_view(request):
             'filter_form': filter_form,
             'query_string': query_string,
             'page_obj': page_obj,
+            'month_comparison': get_month_comparison(request.user),
             **analytics,
         },
     )

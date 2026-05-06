@@ -32,15 +32,15 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 RATELIMIT_ENABLE = config('RATELIMIT_ENABLE', default=not DEBUG, cast=bool)
 
 if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
@@ -63,7 +63,7 @@ INSTALLED_APPS = [
     'services_catalog',
     'appointments',
     'audit.apps.AuditConfig',
-    'analytics',
+    # 'analytics',  # TODO: порожній застосунок — наповнити або видалити папку
     'api',
 ]
 
@@ -158,3 +158,11 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+PAGINATION_PAGE_SIZE = 10

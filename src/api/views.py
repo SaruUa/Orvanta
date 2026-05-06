@@ -1,6 +1,5 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from appointments.models import Appointment
@@ -13,7 +12,7 @@ from .serializers import AppointmentSerializer, ClientSerializer, ServiceSeriali
 
 class ClientViewSet(ReadOnlyModelViewSet):
     serializer_class = ClientSerializer
-    permission_classes = [IsAuthenticated]
+
 
     def get_queryset(self):
         return Client.objects.filter(organization=self.request.user.organization)
@@ -21,7 +20,7 @@ class ClientViewSet(ReadOnlyModelViewSet):
 
 class ServiceViewSet(ReadOnlyModelViewSet):
     serializer_class = ServiceSerializer
-    permission_classes = [IsAuthenticated]
+
 
     def get_queryset(self):
         return Service.objects.select_related('category').filter(
@@ -31,7 +30,7 @@ class ServiceViewSet(ReadOnlyModelViewSet):
 
 class AppointmentViewSet(ReadOnlyModelViewSet):
     serializer_class = AppointmentSerializer
-    permission_classes = [IsAuthenticated]
+
 
     def get_queryset(self):
         return Appointment.objects.select_related('client', 'service', 'employee').filter(
@@ -40,7 +39,7 @@ class AppointmentViewSet(ReadOnlyModelViewSet):
 
 
 class DashboardAnalyticsApiView(APIView):
-    permission_classes = [IsAuthenticated]
+
 
     def get(self, request):
         analytics = get_dashboard_analytics(request.user)

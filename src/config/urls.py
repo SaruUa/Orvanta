@@ -53,7 +53,6 @@ urlpatterns = [
     path('profile/password/', profile_password_change_view, name='profile_password_change'),
     path('settings/organization/', organization_settings_view, name='organization_settings'),
     path('settings/organization/delete/', organization_delete_view, name='organization_delete'),
-    path('organization/settings/', organization_settings_view),
     path('clients/', include('clients.urls')),
     path('services/', include('services_catalog.urls')),
     path('appointments/', include('appointments.urls')),

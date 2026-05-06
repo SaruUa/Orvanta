@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
+from django.conf import settings
 from .decorators import admin_required, organization_required
 from .forms import (
     ConfirmDeleteOrganizationForm,
@@ -23,7 +24,7 @@ from .forms import (
 )
 from .models import Organization, User, UserRole
 
-USERS_PAGE_SIZE = 10
+USERS_PAGE_SIZE = settings.PAGINATION_PAGE_SIZE
 
 
 def _organization_users_queryset(user):

@@ -86,6 +86,71 @@
         </article>
     </section>
 
+    {% if month_comparison %}
+    <section class="table-card month-comparison-card" aria-label="Порівняння місяць-до-місяця">
+        <div class="table-card-header">
+            <div>
+                <h2>Порівняння місяць-до-місяця</h2>
+                <p>{{ month_comparison.previous_label }} → {{ month_comparison.current_label }}</p>
+            </div>
+        </div>
+        <div class="month-comparison-grid">
+
+            <div class="month-cmp-item">
+                <div class="month-cmp-label">Дохід</div>
+                <div class="month-cmp-row">
+                    <span class="month-cmp-prev">{{ month_comparison.previous.total_revenue|floatformat:2 }} грн</span>
+                    <span class="month-cmp-arrow">→</span>
+                    <span class="month-cmp-curr">{{ month_comparison.current.total_revenue|floatformat:2 }} грн</span>
+                </div>
+                {% if month_comparison.revenue_change is not None %}
+                    <div class="month-cmp-delta {% if month_comparison.revenue_change >= 0 %}delta-up{% else %}delta-down{% endif %}">
+                        {% if month_comparison.revenue_change >= 0 %}▲{% else %}▼{% endif %}
+                        {{ month_comparison.revenue_change|floatformat:1 }}%
+                    </div>
+                {% else %}
+                    <div class="month-cmp-delta delta-neutral">— немає даних за попередній місяць</div>
+                {% endif %}
+            </div>
+
+            <div class="month-cmp-item">
+                <div class="month-cmp-label">Середній чек</div>
+                <div class="month-cmp-row">
+                    <span class="month-cmp-prev">{{ month_comparison.previous.average_check|floatformat:2 }} грн</span>
+                    <span class="month-cmp-arrow">→</span>
+                    <span class="month-cmp-curr">{{ month_comparison.current.average_check|floatformat:2 }} грн</span>
+                </div>
+                {% if month_comparison.avg_check_change is not None %}
+                    <div class="month-cmp-delta {% if month_comparison.avg_check_change >= 0 %}delta-up{% else %}delta-down{% endif %}">
+                        {% if month_comparison.avg_check_change >= 0 %}▲{% else %}▼{% endif %}
+                        {{ month_comparison.avg_check_change|floatformat:1 }}%
+                    </div>
+                {% else %}
+                    <div class="month-cmp-delta delta-neutral">— немає даних за попередній місяць</div>
+                {% endif %}
+            </div>
+
+            <div class="month-cmp-item">
+                <div class="month-cmp-label">Кількість записів</div>
+                <div class="month-cmp-row">
+                    <span class="month-cmp-prev">{{ month_comparison.previous.count }}</span>
+                    <span class="month-cmp-arrow">→</span>
+                    <span class="month-cmp-curr">{{ month_comparison.current.count }}</span>
+                </div>
+                {% if month_comparison.count_change is not None %}
+                    <div class="month-cmp-delta {% if month_comparison.count_change >= 0 %}delta-up{% else %}delta-down{% endif %}">
+                        {% if month_comparison.count_change >= 0 %}▲{% else %}▼{% endif %}
+                        {{ month_comparison.count_change|floatformat:1 }}%
+                    </div>
+                {% else %}
+                    <div class="month-cmp-delta delta-neutral">— немає даних за попередній місяць</div>
+                {% endif %}
+            </div>
+
+        </div>
+    </section>
+    {% endif %}
+
     <section class="finance-analytics-grid">
         <article class="table-card">
             <div class="table-card-header">

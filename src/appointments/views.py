@@ -11,13 +11,14 @@ from config.csv_export import (
     format_csv_time,
 )
 from config.utils import filtered_paginated_response
+from django.conf import settings
 from users.decorators import employee_manager_admin_required, manager_or_admin_required, organization_required
 from users.models import UserRole
 
 from .forms import AppointmentActualPriceForm, AppointmentFilterForm, AppointmentForm
 from .models import Appointment, AppointmentStatus, AppointmentStatusHistory
 
-APPOINTMENTS_PAGE_SIZE = 10
+APPOINTMENTS_PAGE_SIZE = settings.PAGINATION_PAGE_SIZE
 
 
 def _organization_appointments_queryset(user):
