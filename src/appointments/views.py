@@ -1,5 +1,4 @@
 from django.contrib import messages
-from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -11,6 +10,7 @@ from config.csv_export import (
     format_csv_datetime,
     format_csv_time,
 )
+from config.utils import filtered_paginated_response
 from users.decorators import employee_manager_admin_required, manager_or_admin_required
 from users.models import UserRole
 
@@ -78,22 +78,10 @@ def _redirect_back_to_appointments(request):
 @employee_manager_admin_required
 def appointment_list_view(request):
     appointments, filter_form = _filtered_appointments_queryset(request.user, request.GET)
-
-    query_params = request.GET.copy()
-    query_params.pop('page', None)
-    page_obj = Paginator(appointments, APPOINTMENTS_PAGE_SIZE).get_page(
-        request.GET.get('page'),
-    )
-
-    return render(
-        request,
+    return filtered_paginated_response(
+        request, appointments, APPOINTMENTS_PAGE_SIZE,
         'appointments/appointment_list.html',
-        {
-            'appointments': page_obj,
-            'filter_form': filter_form,
-            'page_obj': page_obj,
-            'query_string': query_params.urlencode(),
-        },
+        extra_context={'filter_form': filter_form},
     )
 
 

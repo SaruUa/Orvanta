@@ -2,8 +2,7 @@ import csv
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Avg, Count, Sum
-from django.db.models import Max, Min
+from django.db.models import Avg, Count, Max, Min, Sum
 from django.http import HttpResponse
 from django.core.paginator import Paginator
 from django.shortcuts import render

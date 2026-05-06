@@ -72,6 +72,7 @@ class SignupForm(BootstrapFormMixin, UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         _configure_user_creation_fields(self.fields)
+        self.fields['password1'].widget.attrs['placeholder'] = 'A–Z, a–z, 0–9, ! @ # $ % ^ & * ( ) _ - + ='
         self.fields['organization_name'].widget.attrs.setdefault(
             'placeholder',
             'Назва вашої організації',

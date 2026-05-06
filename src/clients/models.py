@@ -6,7 +6,7 @@ from users.models import Organization
 
 class Client(models.Model):
     full_name = models.CharField(max_length=255)
-    phone = models.CharField(max_length=20, unique=True)
+    phone = models.CharField(max_length=20)
     email = models.EmailField(blank=True, null=True)
     birth_date = models.DateField(blank=True, null=True)
     notes = models.TextField(blank=True)
@@ -35,6 +35,12 @@ class Client(models.Model):
         indexes = [
             models.Index(fields=['organization', 'is_active'], name='client_org_active_idx'),
             models.Index(fields=['organization', 'full_name'], name='client_org_name_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organization', 'phone'],
+                name='unique_client_phone_per_org',
+            ),
         ]
 
     def __str__(self):

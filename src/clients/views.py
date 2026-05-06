@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -11,6 +10,7 @@ from config.csv_export import (
     format_csv_bool,
     format_csv_datetime,
 )
+from config.utils import filtered_paginated_response
 from users.decorators import manager_or_admin_required
 
 from .forms import ClientFilterForm, ClientForm
@@ -51,20 +51,10 @@ def _filtered_clients_queryset(user, data):
 @login_required
 def client_list_view(request):
     clients, filter_form = _filtered_clients_queryset(request.user, request.GET)
-
-    query_params = request.GET.copy()
-    query_params.pop('page', None)
-    page_obj = Paginator(clients, CLIENTS_PAGE_SIZE).get_page(request.GET.get('page'))
-
-    return render(
-        request,
+    return filtered_paginated_response(
+        request, clients, CLIENTS_PAGE_SIZE,
         'clients/client_list.html',
-        {
-            'clients': page_obj,
-            'filter_form': filter_form,
-            'page_obj': page_obj,
-            'query_string': query_params.urlencode(),
-        },
+        extra_context={'filter_form': filter_form},
     )
 
 

@@ -59,7 +59,7 @@
 
         <section class="card form-card organization-settings-card">
             <div class="card-body">
-                <h2 class="h5 mb-2 text-danger">Небезпечна зона</h2>
+                <h2 class="h5 mb-2 text-danger">WARNING</h2>
                 <p class="text-muted">
                     Видалення організації прибирає весь робочий простір і не може бути скасоване.
                 </p>
@@ -93,15 +93,15 @@
                     {% endif %}
 
                     <p class="fw-semibold text-danger">
-                        This action will permanently delete the organization and ALL associated data.
+                        Ця дія назавжди видалить організацію та ВСІ пов'язані дані. Скасувати неможливо.
                     </p>
                     <p class="mb-2">Наслідки видалення:</p>
                     <ul class="mb-3">
-                        <li>users</li>
-                        <li>clients</li>
-                        <li>services</li>
-                        <li>appointments</li>
-                        <li>audit logs</li>
+                        <li>користувачі</li>
+                        <li>клієнти</li>
+                        <li>послуги</li>
+                        <li>записи</li>
+                        <li>журнал аудиту</li>
                     </ul>
 
                     {% for field in delete_organization_form %}

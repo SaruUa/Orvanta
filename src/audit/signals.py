@@ -1,21 +1,10 @@
 from django.contrib.auth.signals import user_logged_in, user_logged_out
-from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
-
-from appointments.models import Appointment
-from clients.models import Client
-from services_catalog.models import Service
-from users.models import User
 
 from .models import AuditActionType, AuditEntityType, AuditLog
 
-
-_TRACKED_MODELS = {
-    Client: AuditEntityType.CLIENT,
-    Service: AuditEntityType.SERVICE,
-    Appointment: AuditEntityType.APPOINTMENT,
-    User: AuditEntityType.USER,
-}
+# Заповнюється у AuditConfig.ready() після того, як усі додатки готові.
+_TRACKED_MODELS: dict = {}
 
 
 def get_instance_organization(instance):
@@ -28,6 +17,15 @@ def get_user_organization(user):
         return None
     organization = getattr(user, 'organization', None)
     return organization if organization else None
+
+
+def get_client_ip(request):
+    if request is None:
+        return None
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        return x_forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR")
 
 
 @receiver(user_logged_in)
@@ -47,7 +45,6 @@ def log_user_login(sender, request, user, **kwargs):
 def log_user_logout(sender, request, user, **kwargs):
     if user is None:
         return
-
     AuditLog.objects.create(
         user=user,
         organization=get_user_organization(user),
@@ -59,46 +56,22 @@ def log_user_logout(sender, request, user, **kwargs):
     )
 
 
-def get_client_ip(request):
-    if request is None:
-        return None
-
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        return x_forwarded_for.split(",")[0].strip()
-
-    return request.META.get("REMOTE_ADDR")
+# TODO: field-level diff — не реалізовано
+# @receiver(pre_save)
+# def cache_old_instance_state(sender, instance, **kwargs): ...
 
 
-@receiver(pre_save)
-def cache_old_instance_state(sender, instance, **kwargs):
-    if sender not in _TRACKED_MODELS:
-        return
-
-    if not instance.pk:
-        instance._old_instance = None
-        return
-
-    try:
-        instance._old_instance = sender.objects.get(pk=instance.pk)
-    except sender.DoesNotExist:
-        instance._old_instance = None
-
-
-@receiver(post_save)
 def log_model_save(sender, instance, created, **kwargs):
-    if sender not in _TRACKED_MODELS:
-        return
-
     entity_type = _TRACKED_MODELS[sender]
-
     if created:
         action_type = AuditActionType.CREATE
-        description = f"Створено об'єкт {sender.__name__} з id={instance.pk}."
+        description = f"Створено об'єкт {instance._meta.verbose_name} з id={instance.pk}."
     else:
         action_type = AuditActionType.UPDATE
-        description = f"Оновлено об'єкт {sender.__name__} з id={instance.pk}."
+        description = f"Оновлено об'єкт {instance._meta.verbose_name} з id={instance.pk}."
 
+    # LIMITATION: acting_user = creator, не поточний користувач.
+    # Для точної атрибуції потрібен middleware з threading.local.
     acting_user = getattr(instance, "created_by", None)
     organization = get_instance_organization(instance) or get_user_organization(acting_user)
 
@@ -112,12 +85,11 @@ def log_model_save(sender, instance, created, **kwargs):
     )
 
 
-@receiver(post_delete)
 def log_model_delete(sender, instance, **kwargs):
-    if sender not in _TRACKED_MODELS:
-        return
-
     entity_type = _TRACKED_MODELS[sender]
+
+    # LIMITATION: acting_user = creator, не поточний користувач.
+    # Для точної атрибуції потрібен middleware з threading.local.
     acting_user = getattr(instance, "created_by", None)
     organization = get_instance_organization(instance) or get_user_organization(acting_user)
 
@@ -127,5 +99,5 @@ def log_model_delete(sender, instance, **kwargs):
         action_type=AuditActionType.DELETE,
         entity_type=entity_type,
         entity_id=instance.pk,
-        description=f"Видалено об'єкт {sender.__name__} з id={instance.pk}.",
+        description=f"Видалено об'єкт {instance._meta.verbose_name} з id={instance.pk}.",
     )

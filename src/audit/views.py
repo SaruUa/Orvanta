@@ -1,6 +1,4 @@
-from django.core.paginator import Paginator
-from django.shortcuts import render
-
+from config.utils import filtered_paginated_response
 from users.decorators import admin_required
 
 from .forms import AuditLogFilterForm
@@ -42,17 +40,8 @@ def audit_log_list_view(request):
         if date_to:
             logs = logs.filter(created_at__date__lte=date_to)
 
-    query_params = request.GET.copy()
-    query_params.pop('page', None)
-    page_obj = Paginator(logs, AUDIT_LOGS_PAGE_SIZE).get_page(request.GET.get('page'))
-
-    return render(
-        request,
+    return filtered_paginated_response(
+        request, logs, AUDIT_LOGS_PAGE_SIZE,
         'audit/audit_log_list.html',
-        {
-            'logs': page_obj,
-            'filter_form': filter_form,
-            'page_obj': page_obj,
-            'query_string': query_params.urlencode(),
-        },
+        extra_context={'filter_form': filter_form},
     )

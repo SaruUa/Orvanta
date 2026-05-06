@@ -4,7 +4,7 @@ from users.models import Organization
 
 
 class ServiceCategory(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     organization = models.ForeignKey(
         Organization,
@@ -20,6 +20,12 @@ class ServiceCategory(models.Model):
         verbose_name_plural = 'Категорії послуг'
         indexes = [
             models.Index(fields=['organization', 'name'], name='svc_cat_org_name_idx'),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organization', 'name'],
+                name='unique_service_category_per_org',
+            ),
         ]
 
     def __str__(self):
@@ -59,7 +65,10 @@ class Service(models.Model):
             models.Index(fields=['organization', 'name'], name='svc_org_name_idx'),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['category', 'name'], name='unique_service_per_category')
+            models.UniqueConstraint(
+                fields=['organization', 'category', 'name'],
+                name='unique_service_per_org_category',
+            ),
         ]
 
     def __str__(self):
