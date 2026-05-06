@@ -11,7 +11,7 @@ from config.csv_export import (
     format_csv_time,
 )
 from config.utils import filtered_paginated_response
-from users.decorators import employee_manager_admin_required, manager_or_admin_required
+from users.decorators import employee_manager_admin_required, manager_or_admin_required, organization_required
 from users.models import UserRole
 
 from .forms import AppointmentActualPriceForm, AppointmentFilterForm, AppointmentForm
@@ -147,6 +147,7 @@ def appointment_actual_price_update_view(request, pk):
 
 
 @manager_or_admin_required
+@organization_required
 def appointment_create_view(request):
     if request.method == 'POST':
         form = AppointmentForm(
@@ -154,10 +155,6 @@ def appointment_create_view(request):
             organization=request.user.organization,
         )
         if form.is_valid():
-            if request.user.organization is None:
-                messages.error(request, 'Ваш користувач не прив’язаний до організації.')
-                return redirect('appointment_list')
-
             appointment = form.save(commit=False)
             appointment.created_by = request.user
             appointment.organization = request.user.organization

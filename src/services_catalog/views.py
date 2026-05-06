@@ -11,7 +11,7 @@ from config.csv_export import (
     format_csv_datetime,
 )
 from config.utils import filtered_paginated_response
-from users.decorators import manager_or_admin_required
+from users.decorators import manager_or_admin_required, organization_required
 
 from .forms import ServiceCategoryForm, ServiceFilterForm, ServiceForm
 from .models import Service, ServiceCategory
@@ -64,14 +64,11 @@ def category_list_view(request):
 
 
 @manager_or_admin_required
+@organization_required
 def category_create_view(request):
     if request.method == 'POST':
         form = ServiceCategoryForm(request.POST)
         if form.is_valid():
-            if request.user.organization is None:
-                messages.error(request, 'Ваш користувач не прив’язаний до організації.')
-                return redirect('category_list')
-
             category = form.save(commit=False)
             category.organization = request.user.organization
             category.save()
@@ -153,14 +150,11 @@ def service_export_csv_view(request):
 
 
 @manager_or_admin_required
+@organization_required
 def service_create_view(request):
     if request.method == 'POST':
         form = ServiceForm(request.POST, organization=request.user.organization)
         if form.is_valid():
-            if request.user.organization is None:
-                messages.error(request, 'Ваш користувач не прив’язаний до організації.')
-                return redirect('service_list')
-
             service = form.save(commit=False)
             service.organization = request.user.organization
             service.save()

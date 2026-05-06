@@ -25,3 +25,13 @@ manager_or_admin_required = role_required([UserRole.ADMIN, UserRole.MANAGER])
 employee_manager_admin_required = role_required(
     [UserRole.ADMIN, UserRole.MANAGER, UserRole.EMPLOYEE]
 )
+
+
+def organization_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not hasattr(request.user, 'organization') or request.user.organization is None:
+            messages.error(request, 'Ваш користувач не прив\'язаний до організації.')
+            return redirect('home')
+        return view_func(request, *args, **kwargs)
+    return wrapper

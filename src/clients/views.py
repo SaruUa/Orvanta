@@ -11,7 +11,7 @@ from config.csv_export import (
     format_csv_datetime,
 )
 from config.utils import filtered_paginated_response
-from users.decorators import manager_or_admin_required
+from users.decorators import manager_or_admin_required, organization_required
 
 from .forms import ClientFilterForm, ClientForm
 from .models import Client
@@ -88,14 +88,11 @@ def client_export_csv_view(request):
 
 
 @manager_or_admin_required
+@organization_required
 def client_create_view(request):
     if request.method == 'POST':
         form = ClientForm(request.POST)
         if form.is_valid():
-            if request.user.organization is None:
-                messages.error(request, 'Ваш користувач не прив’язаний до організації.')
-                return redirect('client_list')
-
             client = form.save(commit=False)
             client.created_by = request.user
             client.organization = request.user.organization

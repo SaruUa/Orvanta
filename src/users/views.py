@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
-from .decorators import admin_required
+from .decorators import admin_required, organization_required
 from .forms import (
     ConfirmDeleteOrganizationForm,
     ConfirmDeleteUserForm,
@@ -143,10 +143,8 @@ def user_list_view(request):
 
 
 @admin_required
+@organization_required
 def user_create_view(request):
-    if request.user.organization is None:
-        messages.error(request, 'Неможливо створити користувача без організації.')
-        return redirect('user_list')
 
     if request.method == 'POST':
         form = OrganizationUserCreateForm(request.POST)
@@ -213,7 +211,7 @@ def user_delete_view(request, pk):
         except ProtectedError:
             form.add_error(
                 None,
-                'Користувача не можна видалити, доки з ним пов’язані захищені записи.',
+                "Користувача не можна видалити, доки з ним пов'язані захищені записи.",
             )
         else:
             messages.success(request, f'Користувача {username} успішно видалено.')
@@ -322,11 +320,9 @@ def profile_password_change_view(request):
 
 
 @admin_required
+@organization_required
 def organization_settings_view(request):
     organization = request.user.organization
-    if organization is None:
-        messages.error(request, 'Ваш користувач не прив’язаний до організації.')
-        return redirect('profile')
 
     if request.method == 'POST':
         form = OrganizationSettingsForm(request.POST, instance=organization)
@@ -345,13 +341,10 @@ def organization_settings_view(request):
 
 
 @admin_required
+@organization_required
 @require_POST
 def organization_delete_view(request):
     organization = request.user.organization
-    if organization is None:
-        messages.error(request, 'Ваш користувач не прив’язаний до організації.')
-        return redirect('profile')
-
     settings_form = OrganizationSettingsForm(instance=organization)
     delete_form = ConfirmDeleteOrganizationForm(request.POST, user=request.user)
 
