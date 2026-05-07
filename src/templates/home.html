@@ -33,30 +33,38 @@
     {% endif %}
 
     <section class="metric-grid" aria-label="Ключові показники">
+        <div class="dashboard-refresh-bar">
+            <span class="refresh-dot" data-refresh-dot></span>
+            <span class="refresh-label" data-last-updated></span>
+        </div>
+
         <article class="metric-card">
             <div class="metric-card-label">Записи</div>
-            <div class="metric-card-value">{{ appointments_count }}</div>
-            <div class="metric-card-description">Виконані: {{ completed_count }} · Скасовані: {{ cancelled_count }}</div>
+            <div class="metric-card-value" data-metric="appointments_count">{{ appointments_count }}</div>
+            <div class="metric-card-description">
+                Виконані: <span data-metric="completed_count">{{ completed_count }}</span> ·
+                Скасовані: <span data-metric="cancelled_count">{{ cancelled_count }}</span>
+            </div>
             <a href="{% url 'appointment_list' %}" class="metric-card-link">Перейти →</a>
         </article>
 
         <article class="metric-card">
             <div class="metric-card-label">Клієнти</div>
-            <div class="metric-card-value">{{ clients_count }}</div>
-            <div class="metric-card-description">Активні: {{ active_clients_count }}</div>
+            <div class="metric-card-value" data-metric="clients_count">{{ clients_count }}</div>
+            <div class="metric-card-description">Активні: <span data-metric="active_clients_count">{{ active_clients_count }}</span></div>
             <a href="{% url 'client_list' %}" class="metric-card-link">Перейти →</a>
         </article>
 
         <article class="metric-card">
             <div class="metric-card-label">Послуги</div>
-            <div class="metric-card-value">{{ services_count }}</div>
-            <div class="metric-card-description">Активні: {{ active_services_count }}</div>
+            <div class="metric-card-value" data-metric="services_count">{{ services_count }}</div>
+            <div class="metric-card-description">Активні: <span data-metric="active_services_count">{{ active_services_count }}</span></div>
             <a href="{% url 'service_list' %}" class="metric-card-link">Перейти →</a>
         </article>
 
         <article class="metric-card">
             <div class="metric-card-label">Співробітники</div>
-            <div class="metric-card-value">{{ employees_count }}</div>
+            <div class="metric-card-value" data-metric="employees_count">{{ employees_count }}</div>
             <div class="metric-card-description">У поточній організації</div>
             {% if request.user.role == 'admin' %}
                 <a href="{% url 'user_list' %}" class="metric-card-link">Перейти →</a>
@@ -257,4 +265,9 @@
         </div>
     </section>
 </div>
+{% endblock %}
+
+{% load static %}
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}" defer></script>
 {% endblock %}

@@ -3753,3 +3753,39 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* ── Dashboard refresh indicator ─────────────────────────────── */
+.dashboard-refresh-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    grid-column: 1 / -1;
+    margin-bottom: -0.25rem;
+    min-height: 1.25rem;
+}
+
+.refresh-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-border, #cbd5e1);
+    transition: background 0.3s ease;
+    flex-shrink: 0;
+}
+
+.refresh-dot.refresh-dot-active {
+    background: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    animation: pulse-dot 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-dot {
+    from { box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15); }
+    to   { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.05); }
+}
+
+.refresh-label {
+    font-size: 0.72rem;
+    color: var(--color-text-muted, #94a3b8);
+    letter-spacing: 0.01em;
+}
