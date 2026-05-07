@@ -1,5 +1,5 @@
 :root {
-    --page-bg: #f8f9fa;
+    --page-bg: #f1f5f9;
     --surface-tint: linear-gradient(
         135deg,
         rgba(13, 110, 253, 0.055),
@@ -3479,6 +3479,164 @@ body {
 
 .organization-settings-card {
     min-width: 0;
+}
+
+/* ── Новий адмін-дашборд ── */
+.admin-section {
+    margin-bottom: 1.5rem;
+}
+
+.admin-section-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+}
+
+.admin-two-col {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1rem;
+}
+
+.admin-alerts {
+    margin-bottom: 1.5rem;
+}
+
+.admin-alert-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.admin-alert-card {
+    padding: 1rem 1.25rem;
+    border-radius: 0.85rem;
+    border: 1px solid;
+}
+
+.admin-alert-card.alert-warning {
+    background: #fffbeb;
+    border-color: #fcd34d;
+}
+
+.admin-alert-card.alert-info {
+    background: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.admin-alert-count {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.admin-alert-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.admin-alert-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.82rem;
+    color: #475569;
+}
+
+.admin-alert-list li {
+    padding: 0.15rem 0;
+}
+
+.admin-alert-action {
+    margin-top: 0.75rem;
+}
+
+.admin-security-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid var(--surface-border);
+}
+
+.admin-security-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.1rem 0.5rem;
+    border-right: 1px solid var(--surface-border);
+    gap: 0.2rem;
+}
+
+.admin-security-stat:last-child {
+    border-right: none;
+}
+
+.admin-security-num {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.admin-security-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #94a3b8;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.admin-role-list {
+    padding: 0.75rem 1.25rem 0.5rem;
+}
+
+.admin-role-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.admin-role-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+    color: #344054;
+    font-weight: 500;
+}
+
+.admin-action-badge {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.action-login       { background: #dcfce7; color: #15803d; }
+.action-logout      { background: #f1f5f9; color: #475569; }
+.action-create      { background: #dbeafe; color: #1d4ed8; }
+.action-delete      { background: #fee2e2; color: #dc2626; }
+.action-assign_role { background: #fef3c7; color: #b45309; }
+.action-update      { background: #f3e8ff; color: #7c3aed; }
+
+@media (max-width: 900px) {
+    .admin-two-col {
+        grid-template-columns: 1fr;
+    }
 }
 
 .admin-summary-panel {

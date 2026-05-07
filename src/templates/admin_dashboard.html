@@ -7,102 +7,163 @@
     <header class="page-header">
         <div>
             <h1>Адмін-панель</h1>
-            <p>Службовий огляд користувачів, ролей і подій організації.</p>
+            <p>Здоров'я системи, безпека та адмін-дії організації.</p>
         </div>
         <div class="page-actions">
-            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Користувачі системи</a>
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Користувачі</a>
             <a href="{% url 'audit_log_list' %}" class="btn btn-outline-primary">Журнал аудиту</a>
         </div>
     </header>
 
-    <section class="admin-summary-panel">
-        <div>
-            <h2>Короткий огляд</h2>
-            <p>Основні об’єкти поточної організації.</p>
+    {# ── Попередження ── #}
+    {% if inactive_users_count or never_logged_in_count or completed_without_price %}
+    <section class="admin-alerts" aria-label="Попередження">
+        <h2 class="admin-section-title">⚠ Потребує уваги</h2>
+        <div class="admin-alert-grid">
+            {% if never_logged_in_count %}
+            <div class="admin-alert-card alert-warning">
+                <div class="admin-alert-count">{{ never_logged_in_count }}</div>
+                <div class="admin-alert-label">Користувач{{ never_logged_in_count|pluralize:"ів,ів" }} ніколи не входили</div>
+                <ul class="admin-alert-list">
+                    {% for u in never_logged_in %}
+                        <li>{{ u.username }} · {{ u.get_role_display }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if inactive_users_count %}
+            <div class="admin-alert-card alert-warning">
+                <div class="admin-alert-count">{{ inactive_users_count }}</div>
+                <div class="admin-alert-label">Неактивних 30+ днів</div>
+                <ul class="admin-alert-list">
+                    {% for u in inactive_users %}
+                        <li>{{ u.username }} · {{ u.last_login|date:'d.m.Y' }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if completed_without_price %}
+            <div class="admin-alert-card alert-info">
+                <div class="admin-alert-count">{{ completed_without_price }}</div>
+                <div class="admin-alert-label">Виконаних записів без фактичної вартості</div>
+                <div class="admin-alert-action">
+                    <a href="{% url 'finance_analytics' %}" class="btn btn-sm btn-outline-secondary">Перейти до фінансів</a>
+                </div>
+            </div>
+            {% endif %}
         </div>
-        <div class="admin-summary-grid">
-            <div class="admin-summary-item">
-                <span>Користувачі</span>
-                <strong>{{ users_count }}</strong>
+    </section>
+    {% endif %}
+
+    {# ── Безпека ── #}
+    <section class="admin-section">
+        <h2 class="admin-section-title">Безпека — останні 7 днів</h2>
+        <div class="admin-two-col">
+
+            <div class="table-card">
+                <div class="table-card-header">
+                    <div>
+                        <h3>Активність входів</h3>
+                    </div>
+                </div>
+                <div class="admin-security-stats">
+                    <div class="admin-security-stat">
+                        <span class="admin-security-num">{{ login_count_7d }}</span>
+                        <span class="admin-security-label">входів за 7 днів</span>
+                    </div>
+                    <div class="admin-security-stat">
+                        <span class="admin-security-num">{{ unique_ips_7d }}</span>
+                        <span class="admin-security-label">унікальних IP</span>
+                    </div>
+                    <div class="admin-security-stat">
+                        <span class="admin-security-num">{{ active_users_count }}</span>
+                        <span class="admin-security-label">активних акаунтів</span>
+                    </div>
+                </div>
+                <div class="admin-role-list">
+                    <p class="admin-role-title">Розподіл ролей</p>
+                    {% for item in role_stats %}
+                    <div class="admin-role-row">
+                        <span>{{ item.role }}</span>
+                        <span class="badge bg-primary rounded-pill">{{ item.total }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
-            <div class="admin-summary-item">
-                <span>Клієнти</span>
-                <strong>{{ clients_count }}</strong>
+
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h3>Останні входи / виходи</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="table app-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Подія</th>
+                                <th>Користувач</th>
+                                <th>IP</th>
+                                <th>Час</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for log in recent_auth_logs %}
+                            <tr>
+                                <td>
+                                    <span class="admin-action-badge action-{{ log.action_type }}">
+                                        {{ log.get_action_type_display }}
+                                    </span>
+                                </td>
+                                <td>{{ log.user.username|default:"—" }}</td>
+                                <td class="text-muted" style="font-size:0.85rem">{{ log.ip_address|default:"—" }}</td>
+                                <td class="text-muted" style="font-size:0.85rem">{{ log.created_at|date:'d.m.Y H:i' }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="text-muted">Немає подій.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="admin-summary-item">
-                <span>Послуги</span>
-                <strong>{{ services_count }}</strong>
-            </div>
-            <div class="admin-summary-item">
-                <span>Записи</span>
-                <strong>{{ appointments_count }}</strong>
-            </div>
+
         </div>
     </section>
 
-    <div class="row g-4">
-        <div class="col-lg-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h4 class="card-title mb-3">Ролі користувачів</h4>
-                    {% if role_stats %}
-                        <ul class="list-group">
-                            {% for item in role_stats %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>{{ item.role }}</span>
-                                    <span class="badge bg-primary rounded-pill">{{ item.total }}</span>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="mb-0">Дані відсутні.</p>
-                    {% endif %}
-                </div>
+    {# ── Адмін-дії ── #}
+    <section class="admin-section">
+        <h2 class="admin-section-title">Останні адмін-дії з користувачами</h2>
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table app-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Дія</th>
+                            <th>Виконав</th>
+                            <th>Опис</th>
+                            <th>Час</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for log in admin_actions %}
+                        <tr>
+                            <td>
+                                <span class="admin-action-badge action-{{ log.action_type }}">
+                                    {{ log.get_action_type_display }}
+                                </span>
+                            </td>
+                            <td>{{ log.user.username|default:"—" }}</td>
+                            <td>{{ log.description }}</td>
+                            <td class="text-muted" style="font-size:0.85rem">{{ log.created_at|date:'d.m.Y H:i' }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-muted">Адмін-дії відсутні.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-
-        <div class="col-lg-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h4 class="card-title mb-3">Останні користувачі</h4>
-                    {% if recent_users %}
-                        <ul class="list-group">
-                            {% for user in recent_users %}
-                                <li class="list-group-item">
-                                    <div><strong>{{ user.username }}</strong></div>
-                                    <div>{{ user.get_role_display }}</div>
-                                    <div class="dashboard-meta">{{ user.date_joined|date:'d.m.Y H:i' }}</div>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="mb-0">Користувачі відсутні.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h4 class="card-title mb-3">Останні події аудиту</h4>
-                    {% if recent_logs %}
-                        <ul class="list-group">
-                            {% for log in recent_logs %}
-                                <li class="list-group-item">
-                                    <div><strong>{{ log.get_action_type_display }}</strong></div>
-                                    <div>{{ log.description }}</div>
-                                    <div class="dashboard-meta">{{ log.created_at|date:'d.m.Y H:i' }}</div>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="mb-0">Події аудиту відсутні.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+    </section>
 
 </div>
 {% endblock %}

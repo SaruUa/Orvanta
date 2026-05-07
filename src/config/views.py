@@ -1,4 +1,5 @@
 import csv
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
@@ -10,7 +11,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from appointments.models import Appointment, AppointmentStatus, AppointmentStatusHistory
-from audit.models import AuditLog
+from audit.models import AuditLog, AuditActionType, AuditEntityType
 from clients.models import Client
 from config.csv_export import format_csv_date
 from config.forms import FinanceAnalyticsFilterForm
@@ -547,34 +548,81 @@ def finance_analytics_export_csv_view(request):
 
 @admin_required
 def admin_dashboard_view(request):
-    org_users = User.objects.filter(organization=request.user.organization)
+    org = request.user.organization
+    org_users = User.objects.filter(organization=org)
+    now = timezone.now()
+    seven_days_ago = now - timedelta(days=7)
+    thirty_days_ago = now - timedelta(days=30)
 
-    role_counts = (
-        org_users.values('role')
-        .annotate(total=Count('id'))
-        .order_by('role')
-    )
-
+    # Ролі користувачів
     role_map = dict(User._meta.get_field('role').choices)
     role_stats = [
         {
             'role': role_map.get(item['role'], item['role']),
             'total': item['total'],
         }
-        for item in role_counts
+        for item in org_users.values('role').annotate(total=Count('id')).order_by('role')
     ]
+
+    # Безпека — входи за 7 днів
+    login_qs = AuditLog.objects.filter(
+        organization=org,
+        action_type=AuditActionType.LOGIN,
+        created_at__gte=seven_days_ago,
+    )
+    login_count_7d = login_qs.count()
+    unique_ips_7d = login_qs.exclude(
+        ip_address__isnull=True,
+    ).values('ip_address').distinct().count()
+
+    recent_auth_logs = AuditLog.objects.filter(
+        organization=org,
+        action_type__in=[AuditActionType.LOGIN, AuditActionType.LOGOUT],
+    ).select_related('user').order_by('-created_at')[:8]
+
+    # Стан організації — попередження
+    inactive_users_qs = org_users.filter(
+        last_login__lt=thirty_days_ago,
+        is_active=True,
+    ).exclude(pk=request.user.pk)
+
+    never_logged_in_qs = org_users.filter(
+        last_login__isnull=True,
+        is_active=True,
+    ).exclude(pk=request.user.pk)
+
+    completed_without_price = Appointment.objects.filter(
+        organization=org,
+        status=AppointmentStatus.COMPLETED,
+        actual_price__isnull=True,
+    ).count()
+
+    # Адмін-дії — зміни по користувачах
+    admin_actions = AuditLog.objects.filter(
+        organization=org,
+        action_type__in=[
+            AuditActionType.ASSIGN_ROLE,
+            AuditActionType.CREATE,
+            AuditActionType.DELETE,
+        ],
+        entity_type=AuditEntityType.USER,
+    ).select_related('user').order_by('-created_at')[:8]
 
     context = {
         'users_count': org_users.count(),
-        'clients_count': Client.objects.filter(organization=request.user.organization).count(),
-        'services_count': Service.objects.filter(organization=request.user.organization).count(),
-        'appointments_count': Appointment.objects.filter(
-            organization=request.user.organization,
-        ).count(),
+        'active_users_count': org_users.filter(is_active=True).count(),
         'role_stats': role_stats,
-        'recent_users': org_users.order_by('-date_joined')[:5],
-        'recent_logs': AuditLog.objects.select_related('user').filter(
-            organization=request.user.organization,
-        ).order_by('-created_at')[:10],
+        # Безпека
+        'login_count_7d': login_count_7d,
+        'unique_ips_7d': unique_ips_7d,
+        'recent_auth_logs': recent_auth_logs,
+        # Попередження
+        'inactive_users': inactive_users_qs[:5],
+        'inactive_users_count': inactive_users_qs.count(),
+        'never_logged_in': never_logged_in_qs[:5],
+        'never_logged_in_count': never_logged_in_qs.count(),
+        'completed_without_price': completed_without_price,
+        # Адмін-дії
+        'admin_actions': admin_actions,
     }
     return render(request, 'admin_dashboard.html', context)
