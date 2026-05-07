@@ -31,8 +31,15 @@ login_view = ratelimit(
     )
 )
 
+signup_view = ratelimit(
+    key='ip',
+    rate='3/m',
+    method='POST',
+    block=True,
+)(signup_view)
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('organa-admin/', admin.site.urls),
     path('', home_view, name='home'),
     path('api/', include('api.urls')),
     path('admin-dashboard/', admin_dashboard_view, name='admin_dashboard'),
