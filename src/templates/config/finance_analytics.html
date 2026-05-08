@@ -86,6 +86,27 @@
         </article>
     </section>
 
+    {% if date_revenue %}
+    <section class="table-card finance-chart-card" aria-label="Графік доходу">
+        <div class="table-card-header">
+            <div>
+                <h2>Дохід за датами</h2>
+                <p>Динаміка доходу по днях за поточними фільтрами.</p>
+            </div>
+            <div class="chart-type-toggle">
+                <button class="btn btn-sm btn-outline-secondary chart-toggle-btn active" data-chart-type="bar">Стовпчики</button>
+                <button class="btn btn-sm btn-outline-secondary chart-toggle-btn" data-chart-type="line">Лінія</button>
+            </div>
+        </div>
+        <div class="finance-chart-wrap">
+            <canvas id="revenueChart" aria-label="Графік доходу за датами"></canvas>
+        </div>
+        <script id="revenueChartData" type="application/json">
+            {{ date_revenue_json }}
+        </script>
+    </section>
+    {% endif %}
+
     {% if month_comparison %}
     <section class="table-card month-comparison-card" aria-label="Порівняння місяць-до-місяця">
         <div class="table-card-header">
@@ -216,35 +237,6 @@
             </div>
         </article>
 
-        <article class="table-card">
-            <div class="table-card-header">
-                <h2>Дохід за датами</h2>
-            </div>
-            <div class="table-responsive">
-                <table class="table app-table finance-table align-middle">
-                    <thead>
-                    <tr>
-                        <th>Дата</th>
-                        <th class="text-end">Записи</th>
-                        <th class="text-end">Дохід</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for item in date_revenue %}
-                        <tr>
-                            <td>{{ item.appointment_date|date:'d.m.Y' }}</td>
-                            <td class="text-end">{{ item.appointments_count }}</td>
-                            <td class="text-end">{{ item.revenue|floatformat:2 }} грн</td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="3" class="text-muted">Поки немає даних.</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </article>
     </section>
 
     <section class="table-card finance-detail-card">
@@ -295,4 +287,88 @@
         {% include 'includes/pagination.html' with page_obj=page_obj query_string=query_string %}
     </section>
 </div>
+{% endblock %}
+
+{% load static %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    const canvas = document.getElementById('revenueChart');
+    if (!canvas) return;
+
+    const raw = JSON.parse(document.getElementById('revenueChartData').textContent);
+    // Сортуємо за датою (зростання)
+    raw.sort((a, b) => a.appointment_date.localeCompare(b.appointment_date));
+
+    const labels  = raw.map(d => {
+        const [y, m, day] = d.appointment_date.split('-');
+        return `${day}.${m}.${y}`;
+    });
+    const values  = raw.map(d => parseFloat(d.revenue));
+
+    const style   = getComputedStyle(document.documentElement);
+    const accent  = style.getPropertyValue('--color-accent').trim() || '#6366f1';
+    const muted   = style.getPropertyValue('--color-border').trim()  || '#e2e8f0';
+
+    let chart = new Chart(canvas, buildConfig('bar', labels, values, accent, muted));
+
+    document.querySelectorAll('.chart-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.chart-toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            chart.destroy();
+            chart = new Chart(canvas, buildConfig(btn.dataset.chartType, labels, values, accent, muted));
+        });
+    });
+
+    function buildConfig(type, labels, values, accent, muted) {
+        const isLine = type === 'line';
+        return {
+            type,
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Дохід (грн)',
+                    data: values,
+                    backgroundColor: isLine ? 'transparent' : accent + 'cc',
+                    borderColor: accent,
+                    borderWidth: isLine ? 2 : 0,
+                    borderRadius: isLine ? 0 : 6,
+                    fill: isLine,
+                    tension: 0.35,
+                    pointRadius: isLine ? 4 : 0,
+                    pointBackgroundColor: accent,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.parsed.y.toFixed(2)} грн`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: muted },
+                        ticks: { maxTicksLimit: 12, font: { size: 12 } }
+                    },
+                    y: {
+                        grid: { color: muted },
+                        ticks: {
+                            font: { size: 12 },
+                            callback: v => v.toLocaleString('uk-UA') + ' грн'
+                        },
+                        beginAtZero: true
+                    }
+                }
+            }
+        };
+    }
+})();
+</script>
 {% endblock %}

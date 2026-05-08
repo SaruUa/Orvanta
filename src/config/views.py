@@ -1,4 +1,5 @@
 import csv
+import json
 from datetime import timedelta
 from decimal import Decimal
 
@@ -486,6 +487,16 @@ def finance_analytics_view(request):
         FINANCE_DETAIL_PAGE_SIZE,
     ).get_page(request.GET.get('page'))
 
+    date_revenue_json = json.dumps(
+        [
+            {
+                'appointment_date': str(item['appointment_date']),
+                'revenue': float(item['revenue'] or 0),
+            }
+            for item in analytics.get('date_revenue', [])
+        ]
+    )
+
     return render(
         request,
         'config/finance_analytics.html',
@@ -494,6 +505,7 @@ def finance_analytics_view(request):
             'query_string': query_string,
             'page_obj': page_obj,
             'month_comparison': get_month_comparison(request.user),
+            'date_revenue_json': date_revenue_json,
             **analytics,
         },
     )

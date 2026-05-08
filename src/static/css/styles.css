@@ -3789,3 +3789,31 @@ body {
     color: var(--color-text-muted, #94a3b8);
     letter-spacing: 0.01em;
 }
+
+/* ── Finance chart ───────────────────────────────────────────── */
+.finance-chart-card .table-card-header {
+    align-items: center;
+}
+
+.chart-type-toggle {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.chart-toggle-btn.active {
+    background: var(--color-accent, #6366f1);
+    color: #fff;
+    border-color: var(--color-accent, #6366f1);
+}
+
+.finance-chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 280px;
+}
+
+.finance-chart-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
