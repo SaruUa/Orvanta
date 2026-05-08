@@ -225,8 +225,8 @@
                                     <span>{{ item.employee__username }}</span>
                                     <span class="badge rounded-pill text-bg-dark">{{ item.total }}</span>
                                 </div>
-                                <div class="workload-progress" aria-hidden="true">
-                                    <span></span>
+                                <div class="workload-progress" aria-label="{{ item.pct }}%" aria-hidden="true">
+                                    <span style="--bar-pct: {{ item.pct }}%"></span>
                                 </div>
                             </div>
                         {% endfor %}

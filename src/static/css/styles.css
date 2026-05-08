@@ -330,10 +330,9 @@ body {
 
 .navbar-logo {
     display: block;
-    width: 214px;
-    height: 54px;
-    object-fit: cover;
-    object-position: center;
+    height: 70px;
+    width: auto;
+    object-fit: contain;
 }
 
 .nav-links {
@@ -564,8 +563,8 @@ body {
     }
 
     .navbar-logo {
-        width: 165px;
-        height: 42px;
+        height: 50px;
+        width: auto;
     }
 
     .nav-links {
@@ -597,8 +596,8 @@ body {
     }
 
     .navbar-logo {
-        width: 148px;
-        height: 38px;
+        width: auto;
+        height: 50px;
     }
 
     .logout-btn {
@@ -1841,12 +1840,13 @@ body {
 
 .workload-progress span {
     display: block;
-    width: 100%;
+    width: var(--bar-pct, 0%);
     height: 100%;
     min-width: 0.35rem;
     border-radius: inherit;
-    background-color: var(--surface-accent);
-    opacity: 0.45;
+    background: linear-gradient(90deg, var(--color-accent, #6366f1), #818cf8);
+    opacity: 0.85;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .timeline-item {
@@ -2660,11 +2660,10 @@ body {
 .auth-logo-corner {
     flex: 0 0 auto;
     display: block;
-    width: 285px;
-    height: 70px;
-    margin: -0.40rem -5.0rem 0 0;
-    object-fit: cover;
-    object-position: center;
+    height: 80px;
+    width: auto;
+    margin: 0 0 0 1.5rem;
+    align-self: center;
 }
 
 .auth-brand {
@@ -3023,9 +3022,9 @@ body {
     }
 
     .auth-logo-corner {
-        width: 147px;
-        height: 47px;
-        margin-top: -0.25rem;
+        height: 60px;
+        width: auto;
+        margin: 0 0 0 1rem;
     }
 
     .auth-logo {

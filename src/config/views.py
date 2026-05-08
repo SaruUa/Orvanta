@@ -142,6 +142,12 @@ def get_dashboard_analytics(user):
         .annotate(total=Count('id'))
         .order_by('-total', 'employee__username')[:5]
     )
+    if employee_workload:
+        max_workload = employee_workload[0]['total']
+        for item in employee_workload:
+            item['pct'] = round(item['total'] / max_workload * 100) if max_workload else 0
+    else:
+        max_workload = 0
 
     completed_count = appointments.filter(status=AppointmentStatus.COMPLETED).count()
     cancelled_count = appointments.filter(status=AppointmentStatus.CANCELLED).count()
