@@ -70,13 +70,13 @@ body.page-client_update {
 }
 
 body.page-service_list {
-    --surface-tint: linear-gradient(135deg, rgba(245, 158, 11, 0.085), rgba(251, 191, 36, 0.04));
-    --surface-border: #f4dfb6;
-    --surface-border-hover: #e7c879;
-    --surface-muted: #fffaf0;
-    --surface-muted-border: #f5e6c7;
-    --surface-accent: #b45309;
-    --surface-accent-soft: rgba(245, 158, 11, 0.16);
+    --surface-tint: linear-gradient(135deg, rgba(234, 255, 56, 0.13), rgba(253, 224, 71, 0.07));
+    --surface-border: #ece97a;
+    --surface-border-hover: #d4d034;
+    --surface-muted: #fefff0;
+    --surface-muted-border: #f0ef9a;
+    --surface-accent: #7a7a00;
+    --surface-accent-soft: rgba(202, 214, 20, 0.18);
 }
 
 body.page-service_create {
@@ -275,6 +275,8 @@ body {
 }
 
 .app-navbar {
+    position: relative;
+    z-index: 100;
     background: rgba(255, 255, 255, 0.96);
     border-bottom: 1px solid #e5e7eb;
     box-shadow: 0 0.25rem 1.1rem rgba(15, 23, 42, 0.06);
@@ -347,6 +349,7 @@ body {
 .nav-link-custom {
     display: inline-flex;
     align-items: center;
+    position: relative;
     min-height: 38px;
     padding: 0.48rem 0.68rem;
     border-radius: 0.75rem;
@@ -359,6 +362,19 @@ body {
     transition: background-color 0.18s ease, color 0.18s ease;
 }
 
+.nav-link-custom::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 0.68rem;
+    right: 0.68rem;
+    height: 2px;
+    border-radius: 999px;
+    background-color: var(--surface-accent);
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
+}
+
 .nav-link-custom:hover,
 .nav-link-custom:focus {
     background-color: var(--surface-muted);
@@ -366,9 +382,19 @@ body {
     text-decoration: none;
 }
 
+.nav-link-custom:hover::after {
+    transform: scaleX(0.5);
+    opacity: 0.4;
+}
+
 .nav-link-custom.active {
-    background-color: var(--surface-accent);
-    color: #ffffff;
+    color: var(--surface-accent);
+    background-color: transparent;
+}
+
+.nav-link-custom.active::after {
+    transform: scaleX(1);
+    opacity: 1;
 }
 
 .nav-user {
@@ -2368,6 +2394,12 @@ body {
     align-items: start;
 }
 
+.profile-main-stack {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+}
+
 .profile-side-stack {
     display: grid;
     gap: 1rem;
@@ -2865,51 +2897,63 @@ body {
     text-decoration: underline;
 }
 
+/* Промо-панель: елементи з'являються зліва */
 .auth-motion-ready .auth-page.auth-enhanced .auth-promo h1,
 .auth-motion-ready .auth-page.auth-enhanced .auth-promo-lead,
 .auth-motion-ready .auth-page.auth-enhanced .auth-promo-text,
-.auth-motion-ready .auth-page.auth-enhanced .auth-feature-item,
-.auth-motion-ready .auth-page.auth-enhanced .auth-card {
-    animation: authDropIn 0.58s cubic-bezier(0.22, 1, 0.36, 1) both;
+.auth-motion-ready .auth-page.auth-enhanced .auth-feature-item {
+    animation: authSlideLeft 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .auth-motion-ready .auth-page.auth-enhanced .auth-promo h1 {
-    animation-delay: 0.03s;
+    animation-delay: 0.05s;
 }
 
 .auth-motion-ready .auth-page.auth-enhanced .auth-promo-lead {
-    animation-delay: 0.1s;
+    animation-delay: 0.13s;
 }
 
 .auth-motion-ready .auth-page.auth-enhanced .auth-promo-text {
-    animation-delay: 0.17s;
+    animation-delay: 0.21s;
 }
 
 .auth-motion-ready .auth-page.auth-enhanced .auth-feature-item:nth-child(1) {
-    animation-delay: 0.24s;
+    animation-delay: 0.29s;
 }
 
 .auth-motion-ready .auth-page.auth-enhanced .auth-feature-item:nth-child(2) {
-    animation-delay: 0.31s;
+    animation-delay: 0.37s;
 }
 
 .auth-motion-ready .auth-page.auth-enhanced .auth-feature-item:nth-child(3) {
-    animation-delay: 0.38s;
+    animation-delay: 0.45s;
 }
 
+/* Картка: з'являється справа зі scale */
 .auth-motion-ready .auth-page.auth-enhanced .auth-card {
-    animation-delay: 0.2s;
+    animation: authSlideRight 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 0.1s;
 }
 
-@keyframes authDropIn {
+@keyframes authSlideLeft {
     from {
         opacity: 0;
-        transform: translateY(-28px);
+        transform: translateX(-32px);
     }
-
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateX(0);
+    }
+}
+
+@keyframes authSlideRight {
+    from {
+        opacity: 0;
+        transform: translateX(32px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
     }
 }
 

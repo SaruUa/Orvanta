@@ -34,24 +34,54 @@
     </section>
 
     <div class="profile-layout">
-        <section class="card profile-card">
-            <div class="card-body">
-                <div class="profile-card-header">
-                    <div>
-                        <h2>Контактні дані</h2>
-                        <p>Email використовується для службової інформації та ідентифікації користувача.</p>
+        <div class="profile-main-stack">
+            <section class="card profile-card">
+                <div class="card-body">
+                    <div class="profile-card-header">
+                        <div>
+                            <h2>Контактні дані</h2>
+                            <p>Email використовується для службової інформації та ідентифікації користувача.</p>
+                        </div>
+                    </div>
+
+                    <form method="post" class="app-form profile-email-form">
+                        {% csrf_token %}
+                        {% include 'includes/form_fields.html' with form=profile_form %}
+                        <div class="form-actions">
+                            <button type="submit" name="profile_submit" class="btn btn-primary">Зберегти зміни</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="card profile-card">
+                <div class="card-body">
+                    <div class="profile-card-header">
+                        <div>
+                            <h2>Службова інформація</h2>
+                            <p>Стан облікового запису у системі.</p>
+                        </div>
+                    </div>
+
+                    <div class="profile-detail-list">
+                        <div class="profile-detail-row">
+                            <span>Останній вхід</span>
+                            <strong>{{ request.user.last_login|date:'d.m.Y H:i'|default:'—' }}</strong>
+                        </div>
+                        <div class="profile-detail-row">
+                            <span>Активність</span>
+                            <strong>
+                                {% if request.user.is_active %}
+                                    <span class="badge-soft badge-soft-success">Активний</span>
+                                {% else %}
+                                    <span class="badge-soft badge-soft-muted">Неактивний</span>
+                                {% endif %}
+                            </strong>
+                        </div>
                     </div>
                 </div>
-
-                <form method="post" class="app-form profile-email-form">
-                    {% csrf_token %}
-                    {% include 'includes/form_fields.html' with form=profile_form %}
-                    <div class="form-actions">
-                        <button type="submit" name="profile_submit" class="btn btn-primary">Зберегти зміни</button>
-                    </div>
-                </form>
-            </div>
-        </section>
+            </section>
+        </div>
 
         <aside class="profile-side-stack">
             <section class="card profile-card">
@@ -103,33 +133,6 @@
                 </div>
             </section>
 
-            <section class="card profile-card">
-                <div class="card-body">
-                    <div class="profile-card-header">
-                        <div>
-                            <h2>Службова інформація</h2>
-                            <p>Стан облікового запису у системі.</p>
-                        </div>
-                    </div>
-
-                    <div class="profile-detail-list">
-                        <div class="profile-detail-row">
-                            <span>Останній вхід</span>
-                            <strong>{{ request.user.last_login|date:'d.m.Y H:i'|default:'—' }}</strong>
-                        </div>
-                        <div class="profile-detail-row">
-                            <span>Активність</span>
-                            <strong>
-                                {% if request.user.is_active %}
-                                    <span class="badge-soft badge-soft-success">Активний</span>
-                                {% else %}
-                                    <span class="badge-soft badge-soft-muted">Неактивний</span>
-                                {% endif %}
-                            </strong>
-                        </div>
-                    </div>
-                </div>
-            </section>
         </aside>
     </div>
 </div>
