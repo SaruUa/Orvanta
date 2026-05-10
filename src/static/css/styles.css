@@ -332,8 +332,9 @@ body {
 
 .navbar-logo {
     display: block;
-    height: 70px;
+    height: 32px;
     width: auto;
+    transform: translateY(-2px);
     object-fit: contain;
 }
 
@@ -1597,7 +1598,7 @@ body {
 
 .finance-analytics-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 1rem;
     margin-bottom: 1rem;
 }
@@ -3840,23 +3841,49 @@ body {
 
 .chart-type-toggle {
     display: flex;
-    gap: 0.4rem;
+    gap: 0;
     flex-shrink: 0;
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.chart-toggle-btn {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    color: var(--color-text-muted, #94a3b8);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.3rem 0.85rem;
+    transition: background 0.15s, color 0.15s;
+}
+
+.chart-toggle-btn + .chart-toggle-btn {
+    border-left: 1px solid var(--color-border, #e2e8f0);
+}
+
+.chart-toggle-btn:hover:not(.active) {
+    background: var(--surface-hover, rgba(0,0,0,0.04));
+    color: var(--color-text, #1e293b);
 }
 
 .chart-toggle-btn.active {
-    background: var(--color-accent, #6366f1);
-    color: #fff;
-    border-color: var(--color-accent, #6366f1);
+    background: var(--surface-muted, #f1f5f9);
+    color: var(--color-text, #1e293b);
+    font-weight: 600;
 }
 
 .finance-chart-wrap {
     position: relative;
     width: 100%;
-    height: 280px;
+    height: 300px;
 }
 
 .finance-chart-wrap canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100% !important;
     height: 100% !important;
 }

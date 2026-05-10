@@ -39,7 +39,7 @@ signup_view = ratelimit(
 )(signup_view)
 
 urlpatterns = [
-    path('organa-admin/', admin.site.urls),
+    path('orvanta-admin/', admin.site.urls),
     path('', home_view, name='home'),
     path('api/', include('api.urls')),
     path('admin-dashboard/', admin_dashboard_view, name='admin_dashboard'),

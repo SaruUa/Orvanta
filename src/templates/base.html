@@ -12,10 +12,10 @@
 <body class="page-{{ request.resolver_match.url_name|default:'unknown' }}">
 <nav class="app-navbar{% if request.resolver_match.url_name == 'home' %} app-navbar-home{% endif %} mb-4">
     <div class="navbar-inner">
-        <a class="navbar-brand app-brand" href="{% url 'home' %}" aria-label="Orgada">
+        <a class="navbar-brand app-brand" href="{% url 'home' %}" aria-label="Orvanta">
             <span class="brand-logo-wrap">
                 <span class="navbar-logo-frame">
-                    <img src="{% static 'img/organa-logo.svg' %}" alt="Orgada" class="navbar-logo">
+                    <img src="{% static 'img/orvanta-wordmark.svg' %}" alt="Orvanta" class="navbar-logo">
                 </span>
             </span>
         </a>

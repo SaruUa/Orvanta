@@ -291,38 +291,31 @@
 
 {% load static %}
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script>
-(function () {
+window._revenueChartInit = function () {
     const canvas = document.getElementById('revenueChart');
     if (!canvas) return;
 
-    const raw = JSON.parse(document.getElementById('revenueChartData').textContent);
-    // Сортуємо за датою (зростання)
+    const dataEl = document.getElementById('revenueChartData');
+    if (!dataEl) return;
+
+    let raw;
+    try { raw = JSON.parse(dataEl.textContent); } catch (e) { return; }
+    if (!raw || !raw.length) return;
+
     raw.sort((a, b) => a.appointment_date.localeCompare(b.appointment_date));
 
-    const labels  = raw.map(d => {
+    const labels = raw.map(d => {
         const [y, m, day] = d.appointment_date.split('-');
         return `${day}.${m}.${y}`;
     });
-    const values  = raw.map(d => parseFloat(d.revenue));
+    const values = raw.map(d => parseFloat(d.revenue) || 0);
 
-    const style   = getComputedStyle(document.documentElement);
-    const accent  = style.getPropertyValue('--color-accent').trim() || '#6366f1';
-    const muted   = style.getPropertyValue('--color-border').trim()  || '#e2e8f0';
+    const cs     = getComputedStyle(document.documentElement);
+    const accent = cs.getPropertyValue('--color-accent').trim() || '#6366f1';
+    const muted  = cs.getPropertyValue('--color-border').trim()  || '#e2e8f0';
 
-    let chart = new Chart(canvas, buildConfig('bar', labels, values, accent, muted));
-
-    document.querySelectorAll('.chart-toggle-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.chart-toggle-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            chart.destroy();
-            chart = new Chart(canvas, buildConfig(btn.dataset.chartType, labels, values, accent, muted));
-        });
-    });
-
-    function buildConfig(type, labels, values, accent, muted) {
+    function buildConfig(type) {
         const isLine = type === 'line';
         return {
             type,
@@ -331,7 +324,7 @@
                 datasets: [{
                     label: 'Дохід (грн)',
                     data: values,
-                    backgroundColor: isLine ? 'transparent' : accent + 'cc',
+                    backgroundColor: isLine ? accent + '22' : accent + 'bb',
                     borderColor: accent,
                     borderWidth: isLine ? 2 : 0,
                     borderRadius: isLine ? 0 : 6,
@@ -343,7 +336,8 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false,
+                animation: { duration: 400 },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -355,7 +349,7 @@
                 scales: {
                     x: {
                         grid: { color: muted },
-                        ticks: { maxTicksLimit: 12, font: { size: 12 } }
+                        ticks: { maxTicksLimit: 14, font: { size: 12 } }
                     },
                     y: {
                         grid: { color: muted },
@@ -369,6 +363,18 @@
             }
         };
     }
-})();
+
+    let chart = new Chart(canvas, buildConfig('bar'));
+
+    document.querySelectorAll('.chart-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.chart-toggle-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            chart.destroy();
+            chart = new Chart(canvas, buildConfig(btn.dataset.chartType));
+        });
+    });
+};
 </script>
+<script src="{% static 'js/chart.umd.min.js' %}" onload="window._revenueChartInit()"></script>
 {% endblock %}
