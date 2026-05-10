@@ -1,41 +1,44 @@
 {% if page_obj.paginator.num_pages > 1 %}
-    <nav class="pagination-shell" aria-label="Пагінація">
-        <ul class="pagination pagination-sm justify-content-center mb-0">
-            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-                {% if page_obj.has_previous %}
-                    <a class="page-link" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page=1">Перша</a>
-                {% else %}
-                    <span class="page-link">Перша</span>
-                {% endif %}
-            </li>
+<script>
+(function () {
+    // Відновлюємо позицію скролу після переходу між сторінками
+    var saved = sessionStorage.getItem('pager-scroll');
+    if (saved !== null) {
+        sessionStorage.removeItem('pager-scroll');
+        requestAnimationFrame(function () {
+            window.scrollTo({ top: parseInt(saved, 10), behavior: 'instant' });
+        });
+    }
+    // Зберігаємо позицію перед переходом
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.pager-btn[href]');
+        if (btn) sessionStorage.setItem('pager-scroll', window.scrollY);
+    });
+})();
+</script>
+<nav class="pager" aria-label="Пагінація">
+    <div class="pager-info">
+        Сторінка <strong>{{ page_obj.number }}</strong> з <strong>{{ page_obj.paginator.num_pages }}</strong>
+    </div>
 
-            <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
-                {% if page_obj.has_previous %}
-                    <a class="page-link" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Попередня</a>
-                {% else %}
-                    <span class="page-link">Попередня</span>
-                {% endif %}
-            </li>
+    <div class="pager-controls">
+        {% if page_obj.has_previous %}
+            <a class="pager-btn" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page=1" aria-label="Перша сторінка" title="Перша">«</a>
+            <a class="pager-btn" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Попередня сторінка">‹ Назад</a>
+        {% else %}
+            <span class="pager-btn pager-btn--disabled" aria-disabled="true">«</span>
+            <span class="pager-btn pager-btn--disabled" aria-disabled="true">‹ Назад</span>
+        {% endif %}
 
-            <li class="page-item disabled">
-                <span class="page-link">Сторінка {{ page_obj.number }} з {{ page_obj.paginator.num_pages }}</span>
-            </li>
+        <span class="pager-current">{{ page_obj.number }}</span>
 
-            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-                {% if page_obj.has_next %}
-                    <a class="page-link" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Наступна</a>
-                {% else %}
-                    <span class="page-link">Наступна</span>
-                {% endif %}
-            </li>
-
-            <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
-                {% if page_obj.has_next %}
-                    <a class="page-link" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.paginator.num_pages }}">Остання</a>
-                {% else %}
-                    <span class="page-link">Остання</span>
-                {% endif %}
-            </li>
-        </ul>
-    </nav>
+        {% if page_obj.has_next %}
+            <a class="pager-btn" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.next_page_number }}" aria-label="Наступна сторінка">Далі ›</a>
+            <a class="pager-btn" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page_obj.paginator.num_pages }}" aria-label="Остання сторінка" title="Остання">»</a>
+        {% else %}
+            <span class="pager-btn pager-btn--disabled" aria-disabled="true">Далі ›</span>
+            <span class="pager-btn pager-btn--disabled" aria-disabled="true">»</span>
+        {% endif %}
+    </div>
+</nav>
 {% endif %}

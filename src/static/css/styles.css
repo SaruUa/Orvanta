@@ -569,12 +569,18 @@ body {
         flex-wrap: wrap;
     }
 
+    /* Кнопка профілю — праворуч на першому рядку */
+    .nav-user {
+        margin-left: auto;
+    }
+
     .nav-links {
         order: 3;
         justify-content: flex-start;
         width: 100%;
         overflow-x: auto;
         padding-top: 0.2rem;
+        padding-bottom: 6px; /* місце для скролбару щоб не перекривав посилання */
         scrollbar-width: thin;
     }
 }
@@ -590,7 +596,7 @@ body {
     }
 
     .navbar-logo {
-        height: 50px;
+        height: 28px;
         width: auto;
     }
 
@@ -624,7 +630,7 @@ body {
 
     .navbar-logo {
         width: auto;
-        height: 50px;
+        height: 28px;
     }
 
     .logout-btn {
@@ -1284,34 +1290,34 @@ body {
 }
 
 .dashboard-hero {
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.85rem;
 }
 
 .dashboard-hero-content {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
-    padding: 1.35rem;
+    gap: 1rem;
+    padding: 0.9rem 1.15rem;
     border: 1px solid var(--surface-border);
     border-radius: 1.25rem;
     background: var(--surface-tint), #ffffff;
-    box-shadow: 0 0.75rem 2rem var(--surface-shadow-hover);
+    box-shadow: 0 0.35rem 1rem var(--surface-shadow);
 }
 
 .dashboard-title {
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.2rem;
     color: #101828;
-    font-size: 1.85rem;
+    font-size: 1.45rem;
     font-weight: 750;
     line-height: 1.2;
 }
 
 .dashboard-subtitle {
     max-width: 46rem;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.5rem;
     color: #667085;
-    font-size: 1rem;
+    font-size: 0.9rem;
 }
 
 .dashboard-role-badge {
@@ -2485,10 +2491,29 @@ body {
         width: 100%;
     }
 
-    .profile-hero-card,
-    .profile-identity {
+    .profile-hero-card {
         align-items: flex-start;
         flex-direction: column;
+        padding: 0.85rem;
+        gap: 0.65rem;
+    }
+
+    /* Аватарка + ім'я — залишаємо в рядок на мобільному */
+    .profile-identity {
+        align-items: center;
+        flex-direction: row;
+        gap: 0.65rem;
+    }
+
+    .profile-avatar {
+        width: 42px;
+        height: 42px;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .profile-identity h2 {
+        font-size: 1.05rem;
     }
 
     .profile-joined,
@@ -3504,14 +3529,79 @@ body {
     margin-top: 0.55rem;
 }
 
-.pagination-shell {
-    padding: 0.95rem 1rem 1rem;
-    border-top: 1px solid var(--surface-muted-border);
-    background-color: #ffffff;
+/* ── Pagination ──────────────────────────────────────────────── */
+.pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 1.1rem;
+    border-top: 1px solid var(--color-border, #e2e8f0);
+    background: #ffffff;
+    flex-wrap: wrap;
 }
 
-.pagination-shell .pagination {
-    margin-bottom: 0;
+.pager-info {
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #94a3b8);
+}
+
+.pager-info strong {
+    color: var(--color-text, #1e293b);
+}
+
+.pager-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.pager-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.2rem;
+    height: 2.2rem;
+    padding: 0 0.7rem;
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: 0.6rem;
+    background: #ffffff;
+    color: var(--color-text, #1e293b);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.pager-btn:hover {
+    background: var(--surface-muted, #f1f5f9);
+    border-color: var(--color-accent, #6366f1);
+    color: var(--color-accent, #6366f1);
+    text-decoration: none;
+}
+
+.pager-btn--disabled {
+    color: var(--color-text-muted, #cbd5e1);
+    border-color: var(--color-border, #e2e8f0);
+    background: var(--surface-muted, #f8fafc);
+    pointer-events: none;
+    cursor: default;
+}
+
+.pager-current {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 0.6rem;
+    background: var(--color-accent, #6366f1);
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 700;
+    padding: 0 0.5rem;
 }
 
 .organization-settings-grid {
@@ -3877,13 +3967,81 @@ body {
 .finance-chart-wrap {
     position: relative;
     width: 100%;
-    height: 300px;
+    height: 320px;
+    padding: 0.5rem 0.5rem 1rem;
+    box-sizing: border-box;
 }
 
 .finance-chart-wrap canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
+    display: block;
+}
+
+/* ── Delete confirmation modal ───────────────────────────────── */
+.delete-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(3px);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.delete-modal-overlay.active {
+    display: flex;
+}
+
+.delete-modal {
+    background: #ffffff;
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.18);
+    padding: 2rem;
+    max-width: 460px;
+    width: 100%;
+    animation: modalIn 0.18s ease;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+.delete-modal h2 {
+    margin: 0 0 0.65rem;
+    font-size: 1.15rem;
+    font-weight: 750;
+    color: #101828;
+}
+
+.delete-modal p {
+    margin: 0 0 0.5rem;
+    color: #475569;
+    font-size: 0.95rem;
+}
+
+.delete-modal-meta {
+    background: var(--surface-muted, #f8fafc);
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.9rem;
+    color: #344054;
+}
+
+.delete-modal-warning {
+    color: #b91c1c !important;
+    font-size: 0.85rem !important;
+    margin-top: 0.75rem !important;
+}
+
+.delete-modal-actions {
+    display: flex;
+    gap: 0.65rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.delete-modal-actions form {
+    margin: 0;
 }

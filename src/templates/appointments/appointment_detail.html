@@ -14,8 +14,31 @@
             {% if request.user.role != 'employee' %}
                 <a href="{% url 'appointment_update' appointment.pk %}" class="btn btn-primary">Редагувати запис</a>
             {% endif %}
+            {% if request.user.role == 'admin' %}
+                <button type="button" class="btn btn-danger" data-delete-trigger>Видалити запис</button>
+            {% endif %}
         </div>
     </header>
+
+    {% if request.user.role == 'admin' %}
+    <div class="delete-modal-overlay" id="deleteModal" aria-hidden="true">
+        <div class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+            <h2 id="deleteModalTitle">Підтвердження видалення</h2>
+            <p>Ви впевнені, що хочете видалити цей запис?</p>
+            <p class="delete-modal-meta">
+                <strong>{{ appointment.client }}</strong> · {{ appointment.service }} · {{ appointment.appointment_date|date:'d.m.Y' }}
+            </p>
+            <p class="delete-modal-warning">Цю дію неможливо скасувати. Запис буде видалено разом з історією статусів.</p>
+            <div class="delete-modal-actions">
+                <button type="button" class="btn btn-outline-secondary" data-delete-cancel>Скасувати</button>
+                <form method="post" action="{% url 'appointment_delete' appointment.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Так, видалити</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <section class="detail-card mb-4">
         <div class="detail-grid">
@@ -116,3 +139,30 @@
     </section>
 </div>
 {% endblock %}
+
+{% if request.user.role == 'admin' %}
+{% block extra_js %}
+<script>
+(function () {
+    const modal   = document.getElementById('deleteModal');
+    const trigger = document.querySelector('[data-delete-trigger]');
+    const cancel  = document.querySelector('[data-delete-cancel]');
+    if (!modal || !trigger) return;
+
+    trigger.addEventListener('click', () => {
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+    });
+
+    const close = () => {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+    };
+
+    cancel.addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+})();
+</script>
+{% endblock %}
+{% endif %}

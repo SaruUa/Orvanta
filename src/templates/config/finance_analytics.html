@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Фінансова аналітика{% endblock %}
 
@@ -99,10 +100,10 @@
             </div>
         </div>
         <div class="finance-chart-wrap">
-            <canvas id="revenueChart" aria-label="Графік доходу за датами"></canvas>
+            <canvas id="revenueChart" width="800" height="260" aria-label="Графік доходу за датами"></canvas>
         </div>
         <script id="revenueChartData" type="application/json">
-            {{ date_revenue_json }}
+            {{ date_revenue_json|safe }}
         </script>
     </section>
     {% endif %}
@@ -289,7 +290,6 @@
 </div>
 {% endblock %}
 
-{% load static %}
 {% block extra_js %}
 <script>
 window._revenueChartInit = function () {
@@ -376,5 +376,6 @@ window._revenueChartInit = function () {
     });
 };
 </script>
-<script src="{% static 'js/chart.umd.min.js' %}" onload="window._revenueChartInit()"></script>
+<script src="{% static 'js/chart.umd.min.js' %}"></script>
+<script>window._revenueChartInit();</script>
 {% endblock %}

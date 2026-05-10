@@ -271,11 +271,11 @@ def create_appointments(org, admin, clients, services, employees):
             status      = random.choices(statuses, weights=weights)[0]
             comment     = random.choice(COMMENTS)
 
-            # Фактична вартість — тільки для виконаних (80% заповнені)
+            # Фактична вартість — тільки для виконаних (80% заповнені), без копійок
             actual_price = None
             if status == AppointmentStatus.COMPLETED and random.random() < 0.80:
                 variation    = Decimal(str(random.uniform(0.85, 1.2)))
-                actual_price = (service.price * variation).quantize(Decimal('0.01'))
+                actual_price = Decimal(round(service.price * variation))
 
             appt = Appointment.objects.create(
                 client          = client,

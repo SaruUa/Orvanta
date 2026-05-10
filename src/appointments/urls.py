@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     appointment_actual_price_update_view,
     appointment_create_view,
+    appointment_delete_view,
     appointment_detail_view,
     appointment_export_csv_view,
     appointment_list_view,
@@ -16,6 +17,7 @@ urlpatterns = [
     path('create/', appointment_create_view, name='appointment_create'),
     path('<int:pk>/', appointment_detail_view, name='appointment_detail'),
     path('<int:pk>/edit/', appointment_update_view, name='appointment_update'),
+    path('<int:pk>/delete/', appointment_delete_view, name='appointment_delete'),
     path(
         '<int:pk>/actual-price/',
         appointment_actual_price_update_view,
