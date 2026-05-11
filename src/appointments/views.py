@@ -67,6 +67,8 @@ def _employee_display(employee):
 def _redirect_back_to_appointments(request):
     next_url = request.POST.get('next')
 
+    # Перевіряємо що URL належить тому ж хосту, щоб запобігти відкритому редиректу (open redirect).
+    # Наприклад, зловмисник міг би передати next=https://evil.com у POST-даних.
     if next_url and url_has_allowed_host_and_scheme(
         next_url,
         allowed_hosts={request.get_host()},

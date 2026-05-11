@@ -13,6 +13,12 @@ RUN pip install --upgrade pip \
 
 COPY . /app/
 
+# Збираємо статичні файли під час білду образу.
+# SECRET_KEY потрібен Django навіть для collectstatic — використовуємо тимчасове значення.
+RUN SECRET_KEY=build-placeholder DATABASE_URL=sqlite:///tmp/build.db \
+    python src/manage.py collectstatic --noinput
+
 EXPOSE 8000
 
-CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
+# Production: gunicorn замість dev-сервера
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120"]

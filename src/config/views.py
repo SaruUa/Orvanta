@@ -227,6 +227,7 @@ def _month_revenue(base_queryset, year, month):
 
 
 def _pct_change(current, previous):
+    # Якщо попереднє значення нульове — відсоткову зміну неможливо обчислити
     if previous == 0:
         return None
     change = ((current - previous) / previous * 100).quantize(Decimal('0.1'))
@@ -240,6 +241,7 @@ def get_month_comparison(user):
     today = timezone.localdate()
     cur_year, cur_month = today.year, today.month
 
+    # Крайній випадок: якщо зараз січень — попередній місяць грудень минулого року
     if cur_month == 1:
         prev_year, prev_month = cur_year - 1, 12
     else:
@@ -269,6 +271,8 @@ def get_month_comparison(user):
 
 def _finance_filter_data(query_params):
     data = query_params.copy()
+    # За замовчуванням показуємо тільки виконані записи —
+    # лише вони мають фактичну вартість і впливають на дохід
     if not data.get('status'):
         data['status'] = AppointmentStatus.COMPLETED
     return data
@@ -286,6 +290,9 @@ def _base_finance_queryset(user):
 
 
 def _apply_finance_filters(queryset, cleaned_data, *, include_status=True):
+    # include_status=False використовується для підрахунку виконаних записів БЕЗ фактичної вартості:
+    # нам потрібен той самий набір фільтрів (дата, послуга, співробітник), але без фільтра статусу,
+    # щоб окремо застосувати status=COMPLETED і actual_price__isnull=True
     date_from = cleaned_data.get('date_from')
     date_to = cleaned_data.get('date_to')
     service = cleaned_data.get('service')

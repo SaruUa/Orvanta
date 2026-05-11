@@ -8,6 +8,7 @@ from .models import UserRole
 
 
 def role_required(allowed_roles):
+    """Фабрика декораторів: повертає декоратор що обмежує доступ до view за роллю користувача."""
     def decorator(view_func):
         @login_required
         @wraps(view_func)
@@ -20,6 +21,7 @@ def role_required(allowed_roles):
     return decorator
 
 
+# Готові декоратори для трьох рівнів доступу в системі
 admin_required = role_required([UserRole.ADMIN])
 manager_or_admin_required = role_required([UserRole.ADMIN, UserRole.MANAGER])
 employee_manager_admin_required = role_required(
@@ -28,6 +30,8 @@ employee_manager_admin_required = role_required(
 
 
 def organization_required(view_func):
+    """Блокує доступ якщо користувач не прив'язаний до жодної організації.
+    Використовується для view що створюють об'єкти — щоб гарантувати наявність organization_id."""
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if not hasattr(request.user, 'organization') or request.user.organization is None:
