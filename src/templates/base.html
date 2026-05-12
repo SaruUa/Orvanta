@@ -46,7 +46,6 @@
                     </summary>
                     <div class="user-dropdown-menu">
                         <a class="user-dropdown-item" href="{% url 'profile' %}">Профіль</a>
-                        <a class="user-dropdown-item" href="{% url 'profile_password_change' %}">Змінити пароль</a>
                         {% if request.user.role == 'admin' %}
                             <a class="user-dropdown-item" href="{% url 'organization_settings' %}">Налаштування організації</a>
                         {% endif %}
