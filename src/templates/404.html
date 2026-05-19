@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Сторінку не знайдено{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-page-code">404</div>
+    <h1 class="error-page-title">Сторінку не знайдено</h1>
+    <p class="error-page-text">
+        Схоже, ця сторінка не існує або була переміщена.<br>
+        Перевірте адресу або поверніться на головну.
+    </p>
+    <a href="{% url 'home' %}" class="btn btn-primary">На головну</a>
+</div>
+{% endblock %}

@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db import models
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -44,9 +45,19 @@ def _filtered_appointments_queryset(user, data):
     )
 
     if filter_form.is_valid():
+        search = filter_form.cleaned_data.get('search')
         appointment_date = filter_form.cleaned_data.get('appointment_date')
         status = filter_form.cleaned_data.get('status')
         employee = filter_form.cleaned_data.get('employee')
+
+        if search:
+            appointments = appointments.filter(
+                models.Q(client__full_name__icontains=search) |
+                models.Q(service__name__icontains=search) |
+                models.Q(employee__first_name__icontains=search) |
+                models.Q(employee__last_name__icontains=search) |
+                models.Q(employee__username__icontains=search)
+            )
 
         if appointment_date:
             appointments = appointments.filter(appointment_date=appointment_date)

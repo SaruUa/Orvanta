@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Помилка сервера{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-page-code">500</div>
+    <h1 class="error-page-title">Помилка сервера</h1>
+    <p class="error-page-text">
+        Щось пішло не так на нашому боці.<br>
+        Спробуйте оновити сторінку або поверніться пізніше.
+    </p>
+    <a href="{% url 'home' %}" class="btn btn-primary">На головну</a>
+</div>
+{% endblock %}

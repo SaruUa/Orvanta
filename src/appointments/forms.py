@@ -145,6 +145,14 @@ class AppointmentActualPriceForm(forms.ModelForm):
 
 
 class AppointmentFilterForm(forms.Form):
+    search = forms.CharField(
+        required=False,
+        label='Пошук',
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Клієнт, послуга або співробітник...',
+            'autocomplete': 'off',
+        }),
+    )
     appointment_date = forms.DateField(
         required=False,
         label='Дата',

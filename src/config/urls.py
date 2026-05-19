@@ -3,12 +3,22 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path
 from django_ratelimit.decorators import ratelimit
 
+from django.shortcuts import render
+
 from .views import (
     admin_dashboard_view,
     finance_analytics_export_csv_view,
     finance_analytics_view,
     home_view,
 )
+
+
+def handler404(request, exception):
+    return render(request, '404.html', status=404)
+
+
+def handler500(request):
+    return render(request, '500.html', status=500)
 from users.forms import OrganizationAuthenticationForm
 from users.views import (
     organization_delete_view,
