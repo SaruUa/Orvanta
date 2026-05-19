@@ -266,8 +266,8 @@ The application will be available at `http://localhost:8000`.
 | `DEBUG` | Debug mode | `True` / `False` |
 | `ALLOWED_HOSTS` | Comma-separated allowed hosts | `localhost,127.0.0.1` |
 | `DATABASE_URL` | Full DB URL (used on Railway) | `postgresql://user:pass@host/db` |
-| `DATABASE_NAME` | DB name (local only) | `organa_db` |
-| `DATABASE_USER` | DB user (local only) | `organa_user` |
+| `DATABASE_NAME` | DB name (local only) | `orvanta_db` |
+| `DATABASE_USER` | DB user (local only) | `orvanta_user` |
 | `DATABASE_PASSWORD` | DB password (local only) | `secret` |
 | `DATABASE_HOST` | DB host (local only) | `db` |
 | `DATABASE_PORT` | DB port (local only) | `5432` |

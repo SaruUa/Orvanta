@@ -1,5 +1,5 @@
 """
-Скрипт заповнення бази даних тестовими даними для салону краси.
+Скрипт заповнення бази даних демонстраційними даними.
 Запуск: python seed_salon.py (із директорії src/)
 """
 
@@ -306,7 +306,7 @@ def create_appointments(org, admin, clients, services, employees):
 
 
 def main():
-    print('\n=== Seed: Салон краси ===\n')
+    print('\n=== Seed: Демо-дані Orvanta ===\n')
 
     print('[1/5] Організація та адмін...')
     org   = get_organization()
@@ -324,7 +324,7 @@ def main():
     print('\n[5/5] Записи...')
     create_appointments(org, admin, clients, services, employees)
 
-    print('\n✓ Готово! База заповнена даними салону краси.\n')
+    print('\n✓ Готово! База заповнена демонстраційними даними.\n')
 
 
 if __name__ == '__main__':

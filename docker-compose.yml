@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:18
-    container_name: organa_db
+    container_name: orvanta_db
     restart: unless-stopped
     env_file:
       - .env
@@ -12,11 +12,11 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - organa_postgres_data:/var/lib/postgresql
+      - orvanta_postgres_data:/var/lib/postgresql
 
   web:
     build: .
-    container_name: organa_web
+    container_name: orvanta_web
     restart: unless-stopped
     depends_on:
       - db
@@ -28,4 +28,4 @@ services:
       - .:/app
 
 volumes:
-  organa_postgres_data:
+  orvanta_postgres_data:

@@ -113,9 +113,9 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DATABASE_NAME', default='organa_db'),
-            'USER': config('DATABASE_USER', default='organa_user'),
-            'PASSWORD': config('DATABASE_PASSWORD', default='organa_password'),
+            'NAME': config('DATABASE_NAME', default='orvanta_db'),
+            'USER': config('DATABASE_USER', default='orvanta_user'),
+            'PASSWORD': config('DATABASE_PASSWORD', default='orvanta_password'),
             'HOST': config('DATABASE_HOST', default='localhost'),
             'PORT': config('DATABASE_PORT', default='5432'),
         }
