@@ -366,3 +366,12 @@ def organization_delete_view(request):
             open_delete_organization_modal=True,
         ),
     )
+
+
+@require_POST
+@login_required
+def toggle_compact_ui_view(request):
+    user = request.user
+    user.hide_section_subtitles = not user.hide_section_subtitles
+    user.save(update_fields=['hide_section_subtitles'])
+    return redirect(request.POST.get('next', 'profile'))

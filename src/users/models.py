@@ -37,6 +37,10 @@ class User(AbstractUser):
         choices=UserRole.choices,
         default=UserRole.EMPLOYEE
     )
+    hide_section_subtitles = models.BooleanField(
+        default=False,
+        verbose_name='Приховати підписи під заголовками',
+    )
 
     class Meta:
         verbose_name = 'Користувач'

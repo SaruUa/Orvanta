@@ -4084,3 +4084,33 @@ body {
     margin-bottom: 2rem;
     line-height: 1.7;
 }
+
+/* ── Компактний інтерфейс (hide_section_subtitles) ──────────────────────────── */
+
+.hide-subtitles .dashboard-subtitle,
+.hide-subtitles .filter-card-subtitle,
+.hide-subtitles .form-page-subtitle,
+.hide-subtitles .page-header > div > p,
+.hide-subtitles .profile-card-header > div > p,
+.hide-subtitles .table-card-header > div > p {
+    display: none;
+}
+
+.hide-subtitles .page-header h1 {
+    font-size: 1.25rem;
+}
+
+.hide-subtitles .page-header {
+    padding-bottom: 0.75rem;
+}
+
+.hide-subtitles .table-card-header h2,
+.hide-subtitles .profile-card-header h2 {
+    font-size: 0.95rem;
+}
+
+.hide-subtitles .filter-card .table-card-header,
+.hide-subtitles .filter-card .card-body {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}

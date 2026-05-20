@@ -134,6 +134,24 @@
                 </div>
             </section>
 
+            <section class="card profile-card">
+                <div class="card-body">
+                    <div class="profile-card-header">
+                        <div>
+                            <h2>Інтерфейс</h2>
+                            <p>Приховує підписи під заголовками для більшого робочого простору.</p>
+                        </div>
+                    </div>
+                    <form method="post" action="{% url 'toggle_compact_ui' %}" style="margin-top: 0.75rem;">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="profile">
+                        <button type="submit" class="btn {% if request.user.hide_section_subtitles %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            {% if request.user.hide_section_subtitles %}Компактний режим: увімкнено{% else %}Компактний режим: вимкнено{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </section>
+
         </aside>
     </div>
 </div>
