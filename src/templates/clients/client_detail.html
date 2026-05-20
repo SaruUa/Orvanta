@@ -25,11 +25,11 @@
             </div>
             <div class="detail-item">
                 <span class="detail-label">Телефон</span>
-                <span class="detail-value">{{ client.phone }}</span>
+                <span class="detail-value"><a href="tel:{{ client.phone }}" class="tel-link">{{ client.phone }}</a></span>
             </div>
             <div class="detail-item">
                 <span class="detail-label">Email</span>
-                <span class="detail-value">{{ client.email|default:'—' }}</span>
+                <span class="detail-value">{% if client.email %}<a href="mailto:{{ client.email }}" class="tel-link">{{ client.email }}</a>{% else %}—{% endif %}</span>
             </div>
             <div class="detail-item">
                 <span class="detail-label">Дата народження</span>
