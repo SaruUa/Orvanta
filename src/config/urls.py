@@ -9,6 +9,7 @@ from .views import (
     admin_dashboard_view,
     finance_analytics_export_csv_view,
     finance_analytics_view,
+    health_view,
     home_view,
 )
 
@@ -49,6 +50,7 @@ signup_view = ratelimit(
 )(signup_view)
 
 urlpatterns = [
+    path('health/', health_view, name='health'),
     path('orvanta-admin/', admin.site.urls),
     path('', home_view, name='home'),
     path('api/', include('api.urls')),

@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Count, Max, Min, Sum
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.urls import reverse
@@ -651,3 +651,9 @@ def admin_dashboard_view(request):
         'admin_actions': admin_actions,
     }
     return render(request, 'admin_dashboard.html', context)
+
+
+def health_view(request):
+    """Endpoint для моніторингу Railway — повертає HTTP 200 якщо сервер живий."""
+    return JsonResponse({"status": "ok"})
+

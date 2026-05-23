@@ -1,5 +1,4 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -12,7 +11,11 @@ from config.csv_export import (
 )
 from config.utils import filtered_paginated_response
 from django.conf import settings
-from users.decorators import manager_or_admin_required, organization_required
+from users.decorators import (
+    employee_manager_admin_required,
+    manager_or_admin_required,
+    organization_required,
+)
 
 from .forms import ClientFilterForm, ClientForm
 from .models import Client
@@ -49,7 +52,7 @@ def _filtered_clients_queryset(user, data):
     return clients, filter_form
 
 
-@login_required
+@employee_manager_admin_required
 def client_list_view(request):
     clients, filter_form = _filtered_clients_queryset(request.user, request.GET)
     return filtered_paginated_response(
@@ -59,7 +62,7 @@ def client_list_view(request):
     )
 
 
-@login_required
+@manager_or_admin_required
 def client_export_csv_view(request):
     clients, _filter_form = _filtered_clients_queryset(request.user, request.GET)
     filename = f'clients_export_{timezone.localdate():%Y%m%d}.csv'
@@ -132,7 +135,7 @@ def client_update_view(request, pk):
     })
 
 
-@login_required
+@employee_manager_admin_required
 def client_detail_view(request, pk):
     client = get_object_or_404(
         Client,

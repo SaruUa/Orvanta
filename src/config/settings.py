@@ -64,7 +64,6 @@ INSTALLED_APPS = [
     'services_catalog',
     'appointments',
     'audit.apps.AuditConfig',
-    # 'analytics',  # TODO: порожній застосунок — наповнити або видалити папку
     'api',
 ]
 
