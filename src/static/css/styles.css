@@ -3139,18 +3139,15 @@ body {
     align-items: flex-start;
     justify-content: space-between;
     gap: 1.25rem;
-    margin-bottom: 1.25rem;
-    padding: 1.25rem;
-    border: 1px solid var(--surface-border);
-    border-radius: 1.15rem;
-    background: var(--surface-tint), #ffffff;
-    box-shadow: 0 0.5rem 1.4rem var(--surface-shadow);
+    margin-bottom: 1.5rem;
+    padding: 0 0 0.75rem;
+    border-bottom: 1px solid var(--surface-border);
 }
 
 .page-header h1 {
     margin: 0 0 0.35rem;
     color: #101828;
-    font-size: 1.75rem;
+    font-size: 1.875rem;
     font-weight: 750;
     line-height: 1.2;
 }
@@ -3865,10 +3862,13 @@ body {
 }
 
 @media (max-width: 576px) {
-    .page-header,
     .filter-card,
     .detail-card {
         padding: 0.95rem;
+    }
+
+    .page-header {
+        padding: 0.25rem 0 0.75rem;
     }
 
     .page-header h1 {
@@ -4101,7 +4101,7 @@ body {
 }
 
 .hide-subtitles .page-header {
-    padding-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
 }
 
 .hide-subtitles .table-card-header h2,
@@ -4161,4 +4161,25 @@ body {
 .tel-link:hover {
     color: var(--surface-accent);
     text-decoration: underline;
+}
+
+/* ── Кнопка btn-primary — outline-стиль замість залитого фону ──────────────── */
+
+.btn-primary {
+    background-color: transparent;
+    border-color: var(--surface-accent);
+    color: var(--surface-accent);
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+    background-color: var(--surface-accent-soft);
+    border-color: var(--surface-accent);
+    color: var(--surface-accent);
+}
+
+.btn-primary:active {
+    background-color: var(--surface-accent-soft);
+    border-color: var(--surface-accent);
+    color: var(--surface-accent);
 }

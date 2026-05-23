@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}Деталі запису{% endblock %}
+{% block title %}{{ appointment.client }} — {{ appointment.appointment_date|date:'d.m.Y' }}{% endblock %}
 
 {% block content %}
 <div class="app-page wide">
     <header class="page-header">
         <div>
-            <h1>Деталі запису</h1>
-            <p>{{ appointment.client }} · {{ appointment.service }} · {{ appointment.appointment_date|date:'d.m.Y' }}</p>
+            <h1>{{ appointment.client }}</h1>
+            <p>{{ appointment.service }} · {{ appointment.appointment_date|date:'d.m.Y' }} · {{ appointment.start_time|time:'H:i' }}–{{ appointment.end_time|time:'H:i' }}</p>
         </div>
         <div class="page-actions">
             <a href="{% url 'appointment_list' %}" class="btn btn-outline-secondary">Назад до списку</a>

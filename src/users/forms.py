@@ -49,7 +49,7 @@ def _configure_user_creation_fields(fields):
 
     fields['password2'].label = 'Підтвердження пароля'
     fields['password2'].help_text = 'Введіть той самий пароль ще раз.'
-    fields['password2'].widget.attrs.setdefault('placeholder', 'Підтвердження пароля')
+    fields['password2'].widget.attrs.setdefault('placeholder', '••••••••')
 
 
 class UserRoleForm(BootstrapFormMixin, forms.ModelForm):
@@ -75,7 +75,7 @@ class SignupForm(BootstrapFormMixin, UserCreationForm):
         self.fields['password1'].widget.attrs['placeholder'] = 'A–Z, a–z, 0–9, ! @ # $ % ^ & * ( ) _ - + ='
         self.fields['organization_name'].widget.attrs.setdefault(
             'placeholder',
-            'Назва вашої організації',
+            'напр. Orvanta Demo',
         )
 
     def clean_email(self):
@@ -304,7 +304,7 @@ class ProfilePasswordChangeForm(BootstrapFormMixin, PasswordChangeForm):
         self.fields['new_password2'].help_text = 'Введіть новий пароль ще раз.'
         self.fields['new_password2'].widget.attrs.setdefault(
             'placeholder',
-            'Підтвердження нового пароля',
+            '••••••••',
         )
 
 

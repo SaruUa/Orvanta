@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}Деталі послуги{% endblock %}
+{% block title %}{{ service.name }}{% endblock %}
 
 {% block content %}
 <div class="app-page">
     <header class="page-header">
         <div>
             <h1>{{ service.name }}</h1>
-            <p>Деталі послуги, базова вартість і тривалість виконання.</p>
+            <p>Базова вартість і тривалість виконання.</p>
         </div>
         <div class="page-actions">
             <a href="{% url 'service_list' %}" class="btn btn-outline-secondary">Назад до списку послуг</a>
