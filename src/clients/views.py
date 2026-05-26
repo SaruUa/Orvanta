@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -16,6 +16,8 @@ from users.decorators import (
     manager_or_admin_required,
     organization_required,
 )
+
+from appointments.models import Appointment, AppointmentStatus
 
 from .forms import ClientFilterForm, ClientForm
 from .models import Client
@@ -142,7 +144,56 @@ def client_detail_view(request, pk):
         pk=pk,
         organization=request.user.organization,
     )
-    return render(request, 'clients/client_detail.html', {'client': client})
+
+    appointments = (
+        Appointment.objects
+        .filter(client=client)
+        .select_related('service', 'employee')
+        .order_by('-appointment_date', '-start_time')
+    )
+
+    # Фільтрація
+    status_filter  = request.GET.get('status', '')
+    date_from      = request.GET.get('date_from', '')
+    date_to        = request.GET.get('date_to', '')
+
+    if status_filter:
+        appointments = appointments.filter(status=status_filter)
+    if date_from:
+        appointments = appointments.filter(appointment_date__gte=date_from)
+    if date_to:
+        appointments = appointments.filter(appointment_date__lte=date_to)
+
+    # Статистика (завжди по всіх записах, без фільтрів)
+    all_appointments = Appointment.objects.filter(client=client)
+    total_count      = all_appointments.count()
+    completed_count  = all_appointments.filter(status=AppointmentStatus.COMPLETED).count()
+    total_spent      = all_appointments.filter(
+        status=AppointmentStatus.COMPLETED,
+        actual_price__isnull=False,
+    ).aggregate(s=Sum('actual_price'))['s'] or 0
+    last_visit = (
+        all_appointments
+        .filter(status=AppointmentStatus.COMPLETED)
+        .order_by('-appointment_date')
+        .values_list('appointment_date', flat=True)
+        .first()
+    )
+
+    status_choices = [('', 'Всі статуси')] + list(AppointmentStatus.choices)
+
+    return render(request, 'clients/client_detail.html', {
+        'client':          client,
+        'appointments':    appointments,
+        'status_filter':   status_filter,
+        'date_from':       date_from,
+        'date_to':         date_to,
+        'status_choices':  status_choices,
+        'total_count':     total_count,
+        'completed_count': completed_count,
+        'total_spent':     total_spent,
+        'last_visit':      last_visit,
+    })
 
 
 @manager_or_admin_required

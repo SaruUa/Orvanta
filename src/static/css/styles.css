@@ -4577,3 +4577,88 @@ body.dark-theme .metric-row.is-warning {
 
 body.dark-theme .metric-row.is-warning strong { color: #fbbf24; }
 body.dark-theme .metric-row.is-warning span   { color: #d4a400; }
+
+/* ── Сторінка клієнта: статистика ───────────────────────────────── */
+.client-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .client-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.client-stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--surface-border);
+    border-radius: 1rem;
+    background: var(--surface-tint), #ffffff;
+    box-shadow: 0 0.3rem 0.9rem var(--surface-shadow);
+}
+
+.client-stat-label {
+    color: #667085;
+    font-size: 0.78rem;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+}
+
+.client-stat-value {
+    color: #101828;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+/* ── Фільтр історії записів ──────────────────────────────────────── */
+.client-history-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid var(--surface-muted-border);
+}
+
+.client-history-filter .form-select,
+.client-history-filter .form-control {
+    max-width: 180px;
+    min-height: 36px;
+    font-size: 0.9rem;
+}
+
+/* ── Темна тема: клієнт ──────────────────────────────────────────── */
+body.dark-theme .client-stat-card {
+    background: #1e293b;
+}
+
+body.dark-theme .client-stat-label { color: #64748b; }
+body.dark-theme .client-stat-value { color: #f1f5f9; }
+
+body.dark-theme .client-history-filter {
+    border-bottom-color: #334155;
+}
+
+body.dark-theme .client-history-filter .form-select,
+body.dark-theme .client-history-filter .form-control {
+    background-color: #0f172a;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+/* ── Темна тема: порівняння місяць-до-місяця ────────────────────── */
+body.dark-theme .month-cmp-item {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+body.dark-theme .month-cmp-label  { color: #64748b; }
+body.dark-theme .month-cmp-prev   { color: #475569; }
+body.dark-theme .month-cmp-arrow  { color: #334155; }
+body.dark-theme .month-cmp-curr   { color: #f1f5f9; }
+body.dark-theme .delta-neutral    { color: #64748b; }

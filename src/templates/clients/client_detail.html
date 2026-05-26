@@ -3,7 +3,7 @@
 {% block title %}{{ client.full_name }}{% endblock %}
 
 {% block content %}
-<div class="app-page">
+<div class="app-page wide">
     <header class="page-header">
         <div>
             <h1>{{ client.full_name }}</h1>
@@ -17,7 +17,7 @@
         </div>
     </header>
 
-    <section class="detail-card">
+    <section class="detail-card mb-4">
         <div class="detail-grid">
             <div class="detail-item">
                 <span class="detail-label">ПІБ</span>
@@ -56,6 +56,106 @@
                 <span class="detail-value">{{ client.notes|default:'—' }}</span>
             </div>
         </div>
+    </section>
+
+    {# ── Статистика ── #}
+    <div class="client-stats-grid mb-4">
+        <div class="client-stat-card">
+            <span class="client-stat-label">Всього записів</span>
+            <span class="client-stat-value">{{ total_count }}</span>
+        </div>
+        <div class="client-stat-card">
+            <span class="client-stat-label">Виконано</span>
+            <span class="client-stat-value">{{ completed_count }}</span>
+        </div>
+        <div class="client-stat-card">
+            <span class="client-stat-label">Витрачено загалом</span>
+            <span class="client-stat-value">{{ total_spent|floatformat:2 }} грн</span>
+        </div>
+        <div class="client-stat-card">
+            <span class="client-stat-label">Останній візит</span>
+            <span class="client-stat-value">{{ last_visit|date:'d.m.Y'|default:'—' }}</span>
+        </div>
+    </div>
+
+    {# ── Історія записів ── #}
+    <section class="table-card">
+        <div class="table-card-header">
+            <div>
+                <h2>Історія записів</h2>
+                <p>Всі записи цього клієнта.</p>
+            </div>
+        </div>
+
+        <form method="get" class="client-history-filter">
+            <select name="status" class="form-select form-select-sm">
+                {% for val, label in status_choices %}
+                    <option value="{{ val }}" {% if val == status_filter %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <input
+                type="date"
+                name="date_from"
+                class="form-control form-control-sm"
+                value="{{ date_from }}"
+            >
+            <input
+                type="date"
+                name="date_to"
+                class="form-control form-control-sm"
+                value="{{ date_to }}"
+            >
+            <button type="submit" class="btn btn-sm btn-primary">Застосувати</button>
+            <a href="{% url 'client_detail' client.pk %}" class="btn btn-sm btn-outline-secondary">Скинути</a>
+        </form>
+
+        {% if appointments %}
+            <div class="table-responsive">
+                <table class="table app-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Послуга</th>
+                            <th>Співробітник</th>
+                            <th>Час</th>
+                            <th>Статус</th>
+                            <th>Вартість</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in appointments %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'appointment_detail' appt.pk %}" class="tel-link">
+                                        {{ appt.appointment_date|date:'d.m.Y' }}
+                                    </a>
+                                </td>
+                                <td>{{ appt.service.name }}</td>
+                                <td>{{ appt.employee }}</td>
+                                <td>{{ appt.start_time|time:'H:i' }}–{{ appt.end_time|time:'H:i' }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ appt.status }}">
+                                        {{ appt.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if appt.actual_price is not None %}
+                                        {{ appt.actual_price|floatformat:2 }} грн
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="table-empty-state m-3">
+                <strong>Записів не знайдено</strong>
+                <span>Змініть фільтри або створіть новий запис для цього клієнта.</span>
+            </div>
+        {% endif %}
     </section>
 </div>
 {% endblock %}
