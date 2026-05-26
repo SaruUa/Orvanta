@@ -1,3 +1,29 @@
+// ── Темна тема ───────────────────────────────────────────────────────────────
+(function () {
+    const DARK_KEY = 'orvanta-dark';
+    const body    = document.getElementById('app-body');
+    const btn     = document.getElementById('theme-toggle');
+
+    if (!body || !btn) return;
+
+    const isDark = () => body.classList.contains('dark-theme');
+
+    // Застосовуємо збережений стан одразу (до DOMContentLoaded)
+    if (localStorage.getItem(DARK_KEY) === '1') {
+        body.classList.add('dark-theme');
+    }
+    document.documentElement.classList.remove('dark-theme-init');
+
+    const updateIcon = () => { btn.textContent = isDark() ? '☀' : '🌙'; };
+    updateIcon();
+
+    btn.addEventListener('click', () => {
+        body.classList.toggle('dark-theme');
+        localStorage.setItem(DARK_KEY, isDark() ? '1' : '0');
+        updateIcon();
+    });
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // ── 1. Кнопка × для очищення пошукових полів у filter-form ───────────────
