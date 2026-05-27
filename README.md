@@ -8,13 +8,17 @@ A multi-tenant SaaS platform for managing service businesses — appointments, c
 
 ## Screenshots
 
-| Dashboard | Financial Analytics |
-|---|---|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Finance](docs/screenshots/finance.png) |
+**Dashboard**
+![Dashboard](docs/screenshots/dashboard.png)
 
-| Client Management | Dark Mode |
-|---|---|
-| ![Clients](docs/screenshots/clients.png) | ![Dark Mode](docs/screenshots/dark-mode.png) |
+**Financial Analytics**
+![Finance](docs/screenshots/finance.png)
+
+**Client Management**
+![Clients](docs/screenshots/clients.png)
+
+**Dark Mode**
+![Dark Mode](docs/screenshots/dark-mode.png)
 
 ---
 
