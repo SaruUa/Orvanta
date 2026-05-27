@@ -99,6 +99,7 @@
                 <button class="btn btn-sm btn-outline-secondary chart-toggle-btn" data-chart-type="line">Лінія</button>
             </div>
         </div>
+        <div id="chart-month-filter" class="chart-month-filter"></div>
         <div class="finance-chart-wrap">
             <canvas id="revenueChart" width="800" height="260" aria-label="Графік доходу за датами"></canvas>
         </div>
@@ -305,17 +306,31 @@ window._revenueChartInit = function () {
 
     raw.sort((a, b) => a.appointment_date.localeCompare(b.appointment_date));
 
-    const labels = raw.map(d => {
-        const [y, m, day] = d.appointment_date.split('-');
-        return `${day}.${m}.${y}`;
-    });
-    const values = raw.map(d => parseFloat(d.revenue) || 0);
+    const UA_MONTHS = ['Січень','Лютий','Березень','Квітень','Травень','Червень',
+                       'Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
 
-    const cs     = getComputedStyle(document.documentElement);
-    const accent = cs.getPropertyValue('--color-accent').trim() || '#6366f1';
-    const muted  = cs.getPropertyValue('--color-border').trim()  || '#e2e8f0';
+    // Унікальні місяці у порядку зростання
+    const monthKeys = [...new Set(raw.map(d => d.appointment_date.slice(0, 7)))].sort();
 
-    function buildConfig(type) {
+    const isDark = localStorage.getItem('orvanta-dark') === '1';
+    const accent    = isDark ? '#60a5fa' : '#6366f1';
+    const gridColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.08)';
+    const tickColor = isDark ? '#94a3b8' : '#6b7280';
+
+    let activeMonth = null; // null = всі
+    let activeType  = 'bar';
+
+    function getFiltered() {
+        if (!activeMonth) return raw;
+        return raw.filter(d => d.appointment_date.startsWith(activeMonth));
+    }
+
+    function buildConfig(type, data) {
+        const labels = data.map(d => {
+            const [y, m, day] = d.appointment_date.split('-');
+            return `${day}.${m}.${y}`;
+        });
+        const values = data.map(d => parseFloat(d.revenue) || 0);
         const isLine = type === 'line';
         return {
             type,
@@ -324,7 +339,7 @@ window._revenueChartInit = function () {
                 datasets: [{
                     label: 'Дохід (грн)',
                     data: values,
-                    backgroundColor: isLine ? accent + '22' : accent + 'bb',
+                    backgroundColor: isLine ? accent + '33' : accent + 'bb',
                     borderColor: accent,
                     borderWidth: isLine ? 2 : 0,
                     borderRadius: isLine ? 0 : 6,
@@ -337,7 +352,7 @@ window._revenueChartInit = function () {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: { duration: 400 },
+                animation: { duration: 300 },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -348,13 +363,14 @@ window._revenueChartInit = function () {
                 },
                 scales: {
                     x: {
-                        grid: { color: muted },
-                        ticks: { maxTicksLimit: 14, font: { size: 12 } }
+                        grid: { color: gridColor },
+                        ticks: { maxTicksLimit: 14, font: { size: 12 }, color: tickColor }
                     },
                     y: {
-                        grid: { color: muted },
+                        grid: { color: gridColor },
                         ticks: {
                             font: { size: 12 },
+                            color: tickColor,
                             callback: v => v.toLocaleString('uk-UA') + ' грн'
                         },
                         beginAtZero: true
@@ -364,16 +380,52 @@ window._revenueChartInit = function () {
         };
     }
 
-    let chart = new Chart(canvas, buildConfig('bar'));
+    function redraw() {
+        chart.destroy();
+        chart = new Chart(canvas, buildConfig(activeType, getFiltered()));
+    }
 
+    let chart = new Chart(canvas, buildConfig('bar', raw));
+
+    // Перемикач тип графіку
     document.querySelectorAll('.chart-toggle-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.chart-toggle-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            chart.destroy();
-            chart = new Chart(canvas, buildConfig(btn.dataset.chartType));
+            activeType = btn.dataset.chartType;
+            redraw();
         });
     });
+
+    // Кнопки місяців
+    if (monthKeys.length > 1) {
+        const filterWrap = document.getElementById('chart-month-filter');
+        if (!filterWrap) return;
+
+        const allBtn = document.createElement('button');
+        allBtn.className = 'btn btn-sm btn-outline-secondary chart-month-btn active';
+        allBtn.textContent = 'Всі';
+        allBtn.dataset.month = '';
+        filterWrap.appendChild(allBtn);
+
+        monthKeys.forEach(key => {
+            const [y, m] = key.split('-');
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-sm btn-outline-secondary chart-month-btn';
+            btn.textContent = `${UA_MONTHS[parseInt(m, 10) - 1]} ${y}`;
+            btn.dataset.month = key;
+            filterWrap.appendChild(btn);
+        });
+
+        filterWrap.addEventListener('click', e => {
+            const btn = e.target.closest('.chart-month-btn');
+            if (!btn) return;
+            filterWrap.querySelectorAll('.chart-month-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeMonth = btn.dataset.month || null;
+            redraw();
+        });
+    }
 };
 </script>
 <script src="{% static 'js/chart.umd.min.js' %}"></script>

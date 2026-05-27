@@ -38,15 +38,14 @@
             {% endif %}
         </div>
 
-        <button
-            id="theme-toggle"
-            class="theme-toggle-btn"
-            aria-label="Перемкнути тему"
-            title="Перемкнути темну/світлу тему"
-        >🌙</button>
-
         {% if request.user.is_authenticated %}
             <div class="nav-user">
+                <button
+                    id="theme-toggle"
+                    class="theme-toggle-btn"
+                    aria-label="Перемкнути тему"
+                    title="Перемкнути темну/світлу тему"
+                >🌙</button>
                 <details class="user-dropdown">
                     <summary class="user-pill" aria-label="Меню користувача">
                         <span class="user-avatar">{{ request.user.username|slice:":1"|upper }}</span>
