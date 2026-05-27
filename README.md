@@ -1,8 +1,20 @@
 # Orvanta — Web-Oriented Information System for Service Business Management
 
-Orvanta is a web-oriented information system designed for service-based businesses such as beauty salons. The system allows organizations to manage clients, services, appointments, employees, financial analytics, audit logs, and structured business data in a centralized workspace.
+A multi-tenant SaaS platform for managing service businesses — appointments, clients, staff, and revenue analytics. Built as a bachelor's thesis project.
 
-The project was developed as part of a qualification thesis on the topic of building a web-oriented information system for data management using modern web technologies.
+> **Stack:** Python · Django · PostgreSQL · Bootstrap 5 · Chart.js · Django REST Framework · Railway
+
+---
+
+## Screenshots
+
+| Dashboard | Financial Analytics |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Finance](docs/screenshots/finance.png) |
+
+| Client Management | Dark Mode |
+|---|---|
+| ![Clients](docs/screenshots/clients.png) | ![Dark Mode](docs/screenshots/dark-mode.png) |
 
 ---
 
