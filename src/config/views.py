@@ -4,7 +4,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Avg, Count, Max, Min, Sum
+from django.db.models import Avg, Case, Count, DecimalField, Exists, IntegerField, Max, Min, OuterRef, Sum, When
 from django.http import HttpResponse, JsonResponse
 from django.core.paginator import Paginator
 from django.shortcuts import render
@@ -30,25 +30,46 @@ def get_onboarding_status(user):
     if user.role != UserRole.ADMIN or organization is None:
         return None
 
-    has_service_category = ServiceCategory.objects.filter(
-        organization=organization,
-    ).exists()
-    has_service = Service.objects.filter(
-        organization=organization,
-        is_active=True,
-    ).exists()
-    has_employee = User.objects.filter(
-        organization=organization,
-        role=UserRole.EMPLOYEE,
-        is_active=True,
-    ).exists()
-    has_client = Client.objects.filter(
-        organization=organization,
-        is_active=True,
-    ).exists()
-    has_appointment = Appointment.objects.filter(
-        organization=organization,
-    ).exists()
+    # Один запит замість 5 окремих EXISTS
+    from users.models import Organization
+    onboarding_flags = (
+        Organization.objects.filter(pk=organization.pk)
+        .annotate(
+            has_service_category=Exists(
+                ServiceCategory.objects.filter(organization=OuterRef('pk')),
+            ),
+            has_service=Exists(
+                Service.objects.filter(organization=OuterRef('pk'), is_active=True),
+            ),
+            has_employee=Exists(
+                User.objects.filter(
+                    organization=OuterRef('pk'),
+                    role=UserRole.EMPLOYEE,
+                    is_active=True,
+                ),
+            ),
+            has_client=Exists(
+                Client.objects.filter(organization=OuterRef('pk'), is_active=True),
+            ),
+            has_appointment=Exists(
+                Appointment.objects.filter(organization=OuterRef('pk')),
+            ),
+        )
+        .values(
+            'has_service_category',
+            'has_service',
+            'has_employee',
+            'has_client',
+            'has_appointment',
+        )
+        .first()
+    )
+
+    has_service_category = onboarding_flags['has_service_category']
+    has_service          = onboarding_flags['has_service']
+    has_employee         = onboarding_flags['has_employee']
+    has_client           = onboarding_flags['has_client']
+    has_appointment      = onboarding_flags['has_appointment']
 
     steps = [
         {
@@ -119,7 +140,32 @@ def get_dashboard_analytics(user):
         AppointmentStatus.COMPLETED: 'completed',
         AppointmentStatus.CANCELLED: 'cancelled',
     }
-    appointments_total = appointments.count()
+    # Один запит замість 9 окремих COUNT/aggregate
+    stats = appointments.aggregate(
+        total=Count('id'),
+        completed=Count(Case(When(status=AppointmentStatus.COMPLETED, then=1), output_field=IntegerField())),
+        cancelled=Count(Case(When(status=AppointmentStatus.CANCELLED, then=1), output_field=IntegerField())),
+        planned=Count(Case(When(status=AppointmentStatus.PLANNED, then=1), output_field=IntegerField())),
+        confirmed=Count(Case(When(status=AppointmentStatus.CONFIRMED, then=1), output_field=IntegerField())),
+        completed_without_price=Count(Case(
+            When(status=AppointmentStatus.COMPLETED, actual_price__isnull=True, then=1),
+            output_field=IntegerField(),
+        )),
+        revenue_count=Count(Case(
+            When(status=AppointmentStatus.COMPLETED, actual_price__isnull=False, then=1),
+            output_field=IntegerField(),
+        )),
+        total_revenue=Sum(Case(
+            When(status=AppointmentStatus.COMPLETED, actual_price__isnull=False, then='actual_price'),
+            output_field=DecimalField(),
+        )),
+        average_check=Avg(Case(
+            When(status=AppointmentStatus.COMPLETED, actual_price__isnull=False, then='actual_price'),
+            output_field=DecimalField(),
+        )),
+    )
+
+    appointments_total = stats['total']
     status_counts = [
         {
             'key': item['status'],
@@ -149,51 +195,38 @@ def get_dashboard_analytics(user):
     else:
         max_workload = 0
 
-    completed_count = appointments.filter(status=AppointmentStatus.COMPLETED).count()
-    cancelled_count = appointments.filter(status=AppointmentStatus.CANCELLED).count()
-    planned_count = appointments.filter(status=AppointmentStatus.PLANNED).count()
-    confirmed_count = appointments.filter(status=AppointmentStatus.CONFIRMED).count()
-    completed_without_price_count = appointments.filter(
-        status=AppointmentStatus.COMPLETED,
-        actual_price__isnull=True,
-    ).count()
-    revenue_appointments = appointments.filter(
-        status=AppointmentStatus.COMPLETED,
-        actual_price__isnull=False,
-    )
-    revenue_totals = revenue_appointments.aggregate(
-        total_revenue=Sum('actual_price'),
-        average_check=Avg('actual_price'),
-    )
-    total_revenue = (revenue_totals['total_revenue'] or Decimal('0.00')).quantize(
-        Decimal('0.01'),
-    )
-    average_check = (revenue_totals['average_check'] or Decimal('0.00')).quantize(
-        Decimal('0.01'),
-    )
+    total_revenue = (stats['total_revenue'] or Decimal('0.00')).quantize(Decimal('0.01'))
+    average_check = (stats['average_check'] or Decimal('0.00')).quantize(Decimal('0.01'))
 
-    clients = Client.objects.filter(organization=user_organization)
-    services = Service.objects.filter(organization=user_organization)
+    # Один запит замість 4 окремих COUNT для клієнтів та послуг
+    client_stats = Client.objects.filter(organization=user_organization).aggregate(
+        total=Count('id'),
+        active=Count(Case(When(is_active=True, then=1), output_field=IntegerField())),
+    )
+    service_stats = Service.objects.filter(organization=user_organization).aggregate(
+        total=Count('id'),
+        active=Count(Case(When(is_active=True, then=1), output_field=IntegerField())),
+    )
 
     return {
         'appointments_queryset': appointments,
-        'clients_count': clients.count(),
-        'active_clients_count': clients.filter(is_active=True).count(),
-        'services_count': services.count(),
-        'active_services_count': services.filter(is_active=True).count(),
-        'appointments_count': appointments.count(),
+        'clients_count': client_stats['total'],
+        'active_clients_count': client_stats['active'],
+        'services_count': service_stats['total'],
+        'active_services_count': service_stats['active'],
+        'appointments_count': appointments_total,
         'employees_count': User.objects.filter(
             role=UserRole.EMPLOYEE,
             organization=user_organization,
         ).count(),
-        'completed_count': completed_count,
-        'cancelled_count': cancelled_count,
-        'planned_count': planned_count,
-        'confirmed_count': confirmed_count,
-        'completed_without_price_count': completed_without_price_count,
+        'completed_count': stats['completed'],
+        'cancelled_count': stats['cancelled'],
+        'planned_count': stats['planned'],
+        'confirmed_count': stats['confirmed'],
+        'completed_without_price_count': stats['completed_without_price'],
         'total_revenue': total_revenue,
         'average_check': average_check,
-        'revenue_appointments_count': revenue_appointments.count(),
+        'revenue_appointments_count': stats['revenue_count'],
         'status_counts': status_counts,
         'popular_services': popular_services,
         'employee_workload': employee_workload,

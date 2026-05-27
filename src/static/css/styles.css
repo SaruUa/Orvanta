@@ -4662,3 +4662,18 @@ body.dark-theme .month-cmp-prev   { color: #475569; }
 body.dark-theme .month-cmp-arrow  { color: #334155; }
 body.dark-theme .month-cmp-curr   { color: #f1f5f9; }
 body.dark-theme .delta-neutral    { color: #64748b; }
+
+/* ── Темна тема: адмін-панель alert-картки ──────────────────────── */
+body.dark-theme .admin-alert-card.alert-warning {
+    background: rgba(251, 191, 36, 0.1);
+    border-color: rgba(251, 191, 36, 0.35);
+}
+
+body.dark-theme .admin-alert-card.alert-info {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+body.dark-theme .admin-alert-count { color: #f1f5f9; }
+body.dark-theme .admin-alert-label { color: #64748b; }
+body.dark-theme .admin-alert-list  { color: #94a3b8; }
